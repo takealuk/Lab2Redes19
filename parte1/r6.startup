@@ -1,1 +1,4 @@
+# IP de r6 en el enlace hacia r5:
+ip addr add 10.255.0.2/30 dev eth2
+
 systemctl start frr
