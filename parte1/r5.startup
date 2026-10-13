@@ -1,1 +1,2 @@
 systemctl start frr
+ip addr add 192.168.19.1/30 dev eth4

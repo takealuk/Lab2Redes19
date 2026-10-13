@@ -1,1 +1,2 @@
+ip addr add 192.168.19.2/30 dev eth0
 ip addr add 10.19.0.1/25 dev eth1
