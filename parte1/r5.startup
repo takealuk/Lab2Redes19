@@ -13,5 +13,8 @@ ip route add 10.255.0.4/30 via 10.255.0.2
 # Para llegar a Internet simulado por r6:
 ip route add 8.8.8.0/24 via 10.255.0.2
 
+# Para alcanzar la IP publica de NAT de B por rclb
+ip route add 203.0.113.1/32 via 192.168.19.2
+
 # Inicia FRR, el servicio de routing que trae el laboratorio base
 systemctl start frr 

@@ -10,4 +10,7 @@ ip route add 10.19.0.0/25 via 10.255.0.1
 # Para llegar a Internet simulado por rint:
 ip route add 8.8.8.0/24 via 10.255.0.6
 
+# Para alcanzar la IP publica de NAT de B por r5:
+ip route add 203.0.113.1/32 via 10.255.0.1
+
 systemctl start frr
