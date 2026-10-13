@@ -1,2 +1,8 @@
-systemctl start frr
+# IP de r5 en el enlace hacia rclb:
 ip addr add 192.168.19.1/30 dev eth4
+
+# Para llegar a la LAN de B y devolver respuestas por rclb:
+ip route add 10.19.0.0/25 via 192.168.19.2 
+
+# Inicia FRR, el servicio de routing que trae el laboratorio base
+systemctl start frr 

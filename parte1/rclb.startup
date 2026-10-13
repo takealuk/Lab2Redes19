@@ -1,2 +1,5 @@
-ip addr add 192.168.19.2/30 dev eth0
-ip addr add 10.19.0.1/25 dev eth1
+# IP de rclb en el enlace hacia r5 (ISP):
+ip addr add 192.168.19.2/30 dev eth0 
+
+# IP de rclb que las PCs de B usan como gateway:
+ip addr add 10.19.0.1/25 dev eth1 
