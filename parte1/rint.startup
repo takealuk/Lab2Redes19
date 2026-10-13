@@ -1,0 +1,11 @@
+# IP de rint en el enlace hacia r6:
+ip addr add 10.255.0.6/30 dev eth2
+
+# IP de rint en la red de Internet simulado:
+ip addr add 8.8.8.1/24 dev eth0
+
+# Para devolver respuesta a la LAN de B por r6:
+ip route add 10.19.0.0/25 via 10.255.0.5
+
+# Para alcanzar la IP publica de NAT de B por r6:
+ip route add 203.0.113.1/32 via 10.255.0.5
