@@ -1,0 +1,2 @@
+# IP de rint en el enlace hacia r6:
+ip addr add 10.255.0.6/30 dev eth2
