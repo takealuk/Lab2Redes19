@@ -1,1 +1,7 @@
+# IP de r4 en el enlace hacia r2:
+ip addr add 10.255.0.14/30 dev eth0
+
+# Para llegar a otras redes siguiendo el arbol, enviar por r2:
+ip route add default via 10.255.0.13
+
 systemctl start frr
