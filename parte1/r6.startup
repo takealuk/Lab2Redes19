@@ -4,6 +4,9 @@ ip addr add 10.255.0.2/30 dev eth2
 # IP de r6 en el enlace hacia rint:
 ip addr add 10.255.0.5/30 dev eth0
 
+# IP de r6 en el enlace fuera del arbol hacia r4:
+ip addr add 10.255.0.42/30 dev eth1
+
 # Para devolver paquetes a la LAN de B a traves de r5:
 ip route add 10.19.0.0/25 via 10.255.0.1
 

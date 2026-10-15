@@ -1,6 +1,9 @@
 # IP de rint en el enlace hacia r6:
 ip addr add 10.255.0.6/30 dev eth2
 
+# IP de rint en el enlace hacia r1:
+ip addr add 10.255.0.25/30 dev eth1
+
 # IP de rint en la red de Internet simulado:
 ip addr add 8.8.8.1/24 dev eth0
 
