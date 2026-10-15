@@ -90,7 +90,7 @@ pca1
 ```
 
 El árbol muestra el diseño completo propuesto; hasta ahora se incorporaron
-`r1`, `r2`, `r4`, `r5`, `r6`, `rint`, `rclb`, `pcb1` y `pcint`. Las otras ramas y el
+`r1`, `r2`, `r3`, `r4`, `r5`, `r6`, `rint`, `rclb`, `pcb1` y `pcint`. Las otras ramas y el
 direccionamiento de `srvb` siguen pendientes.
 
 Direcciones actualmente configuradas en `parte1/`:
@@ -104,6 +104,7 @@ Direcciones actualmente configuradas en `parte1/`:
 | Enlace r2–r5 | `10.255.0.8/30` | `r5 eth0: 10.255.0.9`, `r2 eth3: 10.255.0.10` |
 | Enlace r2–r4 | `10.255.0.12/30` | `r2 eth2: 10.255.0.13`, `r4 eth0: 10.255.0.14` |
 | Enlace r1–r2 | `10.255.0.16/30` | `r2 eth0: 10.255.0.17`, `r1 eth1: 10.255.0.18` |
+| Enlace r1–r3 | `10.255.0.20/30` | `r1 eth2: 10.255.0.21`, `r3 eth0: 10.255.0.22` |
 | Internet simulado | `8.8.8.0/24` | `rint eth0: 8.8.8.1`, `pcint eth0: 8.8.8.8` |
 | IP pública de SNAT de B | `203.0.113.1/32` | `rclb lo: 203.0.113.1` |
 | LAN A (configuración inicial parcial) | `192.168.100.0/24` | `pca1 eth0: 192.168.100.10`; gateway previsto `192.168.100.1`, aún pendiente en `rcla` |
@@ -129,6 +130,16 @@ El camino de `r4` hacia Internet es `r4 → r2 → r5 → r6 → rint → pcint`
 `r4` la alcanza mediante su ruta por defecto hacia `r2`.
 El camino de `r1` hacia Internet es `r1 → r2 → r5 → r6 → rint → pcint`.
 
+`r3` tiene una ruta por defecto hacia `r1` (`10.255.0.21`). Las rutas hacia
+`10.255.0.20/30` apuntan desde `r2` a `r1` (`10.255.0.18`), desde `r5` a
+`r2` (`10.255.0.10`), desde `r6` a `r5` (`10.255.0.1`), desde `rint` a
+`r6` (`10.255.0.5`) y desde `rclb` a `r5` (`203.0.113.5`). `r1` conoce
+esa subred por estar directamente conectado; `r4` la alcanza mediante su
+ruta por defecto hacia `r2`.
+El camino hacia Internet es `r3 → r1 → r2 → r5 → r6 → rint → pcint`.
+Los seis routers del backbone ya tienen configurada su conexión al árbol;
+siguen pendientes los enlaces fuera del árbol, `rcla` y `srvb`.
+
 Flujo de trabajo: incorporar un nodo, probar el enlace directo, agregar las
 rutas de retorno y probar la conectividad de extremo a extremo.
 
@@ -140,6 +151,7 @@ Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
 - `pcb1 → 10.255.0.9`: funcionamiento confirmado.
 - Ping del enlace directo entre `r2` y `r4`: funcionamiento confirmado.
 - Ping del enlace directo entre `r1` y `r2`: funcionamiento confirmado.
+- Ping del enlace directo entre `r1` y `r3`: funcionamiento confirmado.
 - Tras agregar las rutas de retorno de `r1`, Luca confirmó que funcionaron
   `r1 → 8.8.8.8`, `pcb1 → 10.255.0.18`, `pcb1 → 8.8.8.8` y
   `r4 → 10.255.0.18`.
@@ -147,6 +159,10 @@ Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
 Tras agregar las rutas de retorno de `r4`, las pruebas previstas son
 `r4 → 8.8.8.8`, `pcb1 → 10.255.0.14` y `pcb1 → 8.8.8.8`.
 No se adjuntaron resultados de estas tres pruebas en esta actualización.
+
+Tras agregar las rutas de retorno de `r3`, quedan por confirmar los pings
+`r3 → 8.8.8.8`, `pcb1 → 10.255.0.22`, `pcb1 → 8.8.8.8` y
+`r4 → 10.255.0.22`. No se adjuntaron resultados de estas pruebas.
 
 ### Parte 1.4 – `parte1_4/`
 Igual a `parte1/`, más `r7` y `r8` (`kathara/frr`, con ospfd habilitado y

@@ -27,3 +27,6 @@ ip route add 10.255.0.12/30 via 203.0.113.5
 
 # Para alcanzar el enlace r1-r2 a traves de r5:
 ip route add 10.255.0.16/30 via 203.0.113.5
+
+# Para alcanzar el enlace r1-r3 a traves de r5:
+ip route add 10.255.0.20/30 via 203.0.113.5
