@@ -28,4 +28,7 @@ ip route add 10.255.0.16/30 via 10.255.0.1
 # Para alcanzar el enlace r1-r3 a traves de r5:
 ip route add 10.255.0.20/30 via 10.255.0.1
 
+# Para alcanzar la red publica del servidor B a traves de r5:
+ip route add 203.0.113.8/30 via 10.255.0.1
+
 systemctl start frr

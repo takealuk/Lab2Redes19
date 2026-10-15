@@ -90,8 +90,8 @@ pca1
 ```
 
 El árbol muestra el diseño completo propuesto; hasta ahora se incorporaron
-`r1`, `r2`, `r3`, `r4`, `r5`, `r6`, `rint`, `rclb`, `pcb1` y `pcint`. Las otras ramas y el
-direccionamiento de `srvb` siguen pendientes.
+`r1`, `r2`, `r3`, `r4`, `r5`, `r6`, `rint`, `rclb`, `pcb1`, `pcint` y `srvb`.
+La rama de `rcla` sigue pendiente.
 
 Direcciones actualmente configuradas en `parte1/`:
 
@@ -112,6 +112,7 @@ Direcciones actualmente configuradas en `parte1/`:
 | Enlace r4–r6 (fuera del árbol) | `10.255.0.40/30` | `r4 eth2: 10.255.0.41`, `r6 eth1: 10.255.0.42` |
 | Internet simulado | `8.8.8.0/24` | `rint eth0: 8.8.8.1`, `pcint eth0: 8.8.8.8` |
 | IP pública de SNAT de B | `203.0.113.1/32` | `rclb lo: 203.0.113.1` |
+| Red pública del servidor B | `203.0.113.8/30` | `rclb eth2: 203.0.113.9`, `srvb eth0: 203.0.113.10` |
 | LAN A (configuración inicial parcial) | `192.168.100.0/24` | `pca1 eth0: 192.168.100.10`; gateway previsto `192.168.100.1`, aún pendiente en `rcla` |
 
 El enlace cliente–ISP usa direcciones públicas siguiendo la corrección enviada
@@ -143,8 +144,10 @@ esa subred por estar directamente conectado; `r4` la alcanza mediante su
 ruta por defecto hacia `r2`.
 El camino hacia Internet es `r3 → r1 → r2 → r5 → r6 → rint → pcint`.
 Los seis routers del backbone ya tienen configurada su conexión al árbol;
-los cinco enlaces fuera del árbol también están numerados. Siguen pendientes
-`rcla`, `srvb` y la revisión de rutas hacia las nuevas subredes.
+los cinco enlaces fuera del árbol también están numerados. Sigue pendiente
+la configuración de `rcla`. Según la aclaración docente, se numera todo, pero
+no es necesario enrutar hacia todas las interfaces: se conservan las rutas
+necesarias para los servicios y el diseño estático elegido.
 
 Para los enlaces fuera del árbol solo se agregaron direcciones IP. Linux crea
 las rutas directamente conectadas, por lo que sus extremos pueden comunicarse
@@ -152,11 +155,27 @@ por esos enlaces. Se conservaron las rutas estáticas y por defecto existentes;
 esto no garantiza todavía acceso a todas las nuevas IP desde el resto de la red.
 El árbol sigue siendo la guía para las rutas de tránsito configuradas manualmente.
 
+El servidor B usa `203.0.113.10/30` y tiene como gateway `203.0.113.9`
+(`rclb eth2`). El prefijo `/30` admite exactamente las dos interfaces necesarias
+para esta parte. No se aplica NAT al tráfico originado en el servidor: la regla
+SNAT existente solo coincide con la LAN privada `10.19.0.0/25`.
+
+Para alcanzar `203.0.113.8/30`, se configuraron rutas en `r5` vía
+`203.0.113.6`, en `r6` vía `10.255.0.1` y en `rint` vía `10.255.0.5`.
+El acceso desde Internet sigue `pcint → rint → r6 → r5 → rclb → srvb`.
+Las respuestas hacia `8.8.8.0/24` usan las rutas ya existentes.
+
 Flujo de trabajo: incorporar un nodo, probar el enlace directo, agregar las
 rutas de retorno y probar la conectividad de extremo a extremo.
 
 Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
 
+- Ping directo entre `rclb` y `srvb`: funcionamiento confirmado.
+- `pcint → 203.0.113.10`: cuatro respuestas, 0 % de pérdida en la salida compartida.
+- HTTP desde `pcint` a `http://203.0.113.10/`: `curl` recibió la página de Apache.
+- `srvb → 8.8.8.8`: funcionamiento confirmado.
+- Después de `kathara lrestart`, Luca confirmó nuevamente ping y HTTP desde
+  `pcint` al servidor y ping desde `pcb1` a `8.8.8.8` (salida con NAT).
 - Ping del enlace directo entre `r2` y `r5`.
 - `r2 → 8.8.8.8`: cuatro respuestas y 0 % de pérdida en la salida compartida.
 - `pcb1 → 10.255.0.10` y `pcb1 → 8.8.8.8`: funcionamiento confirmado.
