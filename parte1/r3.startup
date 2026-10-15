@@ -1,1 +1,8 @@
+# IP de r3 en el enlace hacia r1:
+ip addr add 10.255.0.22/30 dev eth0
+
+# Para llegar a otras redes siguiendo el arbol, enviar por r1:
+ip route add default via 10.255.0.21
+
+# Inicia FRR, el servicio de routing que trae el laboratorio base
 systemctl start frr
