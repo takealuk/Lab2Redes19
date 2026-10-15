@@ -21,3 +21,6 @@ ip route add 10.255.0.8/30 via 203.0.113.5
 
 # Para llegar a Internet simulado por r5:
 ip route add 8.8.8.0/24 via 203.0.113.5
+
+# Para llegar al enlace r2-r4 a traves de r5:
+ip route add 10.255.0.12/30 via 203.0.113.5
