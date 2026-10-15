@@ -22,5 +22,8 @@ ip route add 203.0.113.1/32 via 203.0.113.6
 # Para alcanzar el enlace r2-r4 a traves de r2:
 ip route add 10.255.0.12/30 via 10.255.0.10
 
+# Para alcanzar el enlace r1-r2 a traves de r2:
+ip route add 10.255.0.16/30 via 10.255.0.10
+
 # Inicia FRR, el servicio de routing que trae el laboratorio base
 systemctl start frr 

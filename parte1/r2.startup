@@ -4,6 +4,9 @@ ip addr add 10.255.0.10/30 dev eth3
 # IP de r2 en el enlace hacia r4:
 ip addr add 10.255.0.13/30 dev eth2
 
+# IP de r2 en el enlace hacia r1:
+ip addr add 10.255.0.17/30 dev eth0
+
 # Para llegar a otras redes a traves de r5:
 ip route add default via 10.255.0.9
 
