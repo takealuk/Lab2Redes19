@@ -1,6 +1,12 @@
 # IP de r3 en el enlace hacia r1:
 ip addr add 10.255.0.22/30 dev eth0
 
+# IP de r3 en el enlace fuera del arbol hacia r2:
+ip addr add 10.255.0.30/30 dev eth1
+
+# IP de r3 en el enlace fuera del arbol hacia r5:
+ip addr add 10.255.0.33/30 dev eth2
+
 # Para llegar a otras redes siguiendo el arbol, enviar por r1:
 ip route add default via 10.255.0.21
 

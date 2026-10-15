@@ -105,6 +105,11 @@ Direcciones actualmente configuradas en `parte1/`:
 | Enlace r2–r4 | `10.255.0.12/30` | `r2 eth2: 10.255.0.13`, `r4 eth0: 10.255.0.14` |
 | Enlace r1–r2 | `10.255.0.16/30` | `r2 eth0: 10.255.0.17`, `r1 eth1: 10.255.0.18` |
 | Enlace r1–r3 | `10.255.0.20/30` | `r1 eth2: 10.255.0.21`, `r3 eth0: 10.255.0.22` |
+| Enlace rint–r1 (fuera del árbol) | `10.255.0.24/30` | `rint eth1: 10.255.0.25`, `r1 eth0: 10.255.0.26` |
+| Enlace r2–r3 (fuera del árbol) | `10.255.0.28/30` | `r2 eth1: 10.255.0.29`, `r3 eth1: 10.255.0.30` |
+| Enlace r3–r5 (fuera del árbol) | `10.255.0.32/30` | `r3 eth2: 10.255.0.33`, `r5 eth1: 10.255.0.34` |
+| Enlace r4–r5 (fuera del árbol) | `10.255.0.36/30` | `r4 eth1: 10.255.0.37`, `r5 eth2: 10.255.0.38` |
+| Enlace r4–r6 (fuera del árbol) | `10.255.0.40/30` | `r4 eth2: 10.255.0.41`, `r6 eth1: 10.255.0.42` |
 | Internet simulado | `8.8.8.0/24` | `rint eth0: 8.8.8.1`, `pcint eth0: 8.8.8.8` |
 | IP pública de SNAT de B | `203.0.113.1/32` | `rclb lo: 203.0.113.1` |
 | LAN A (configuración inicial parcial) | `192.168.100.0/24` | `pca1 eth0: 192.168.100.10`; gateway previsto `192.168.100.1`, aún pendiente en `rcla` |
@@ -138,7 +143,14 @@ esa subred por estar directamente conectado; `r4` la alcanza mediante su
 ruta por defecto hacia `r2`.
 El camino hacia Internet es `r3 → r1 → r2 → r5 → r6 → rint → pcint`.
 Los seis routers del backbone ya tienen configurada su conexión al árbol;
-siguen pendientes los enlaces fuera del árbol, `rcla` y `srvb`.
+los cinco enlaces fuera del árbol también están numerados. Siguen pendientes
+`rcla`, `srvb` y la revisión de rutas hacia las nuevas subredes.
+
+Para los enlaces fuera del árbol solo se agregaron direcciones IP. Linux crea
+las rutas directamente conectadas, por lo que sus extremos pueden comunicarse
+por esos enlaces. Se conservaron las rutas estáticas y por defecto existentes;
+esto no garantiza todavía acceso a todas las nuevas IP desde el resto de la red.
+El árbol sigue siendo la guía para las rutas de tránsito configuradas manualmente.
 
 Flujo de trabajo: incorporar un nodo, probar el enlace directo, agregar las
 rutas de retorno y probar la conectividad de extremo a extremo.
@@ -163,6 +175,11 @@ No se adjuntaron resultados de estas tres pruebas en esta actualización.
 Tras agregar las rutas de retorno de `r3`, quedan por confirmar los pings
 `r3 → 8.8.8.8`, `pcb1 → 10.255.0.22`, `pcb1 → 8.8.8.8` y
 `r4 → 10.255.0.22`. No se adjuntaron resultados de estas pruebas.
+
+Para verificar los enlaces fuera del árbol, probar ping en ambos sentidos
+entre `.25` y `.26`, `.29` y `.30`, `.33` y `.34`, `.37` y `.38`, y `.41` y
+`.42`, todas dentro de `10.255.0.0/24`. Sus resultados quedan pendientes de
+confirmación; esta actualización verifica los archivos, no ejecuta la emulación.
 
 ### Parte 1.4 – `parte1_4/`
 Igual a `parte1/`, más `r7` y `r8` (`kathara/frr`, con ospfd habilitado y

@@ -7,6 +7,12 @@ ip addr add 10.255.0.1/30 dev eth3
 # IP de r5 en el enlace hacia r2:
 ip addr add 10.255.0.9/30 dev eth0
 
+# IP de r5 en el enlace fuera del arbol hacia r3:
+ip addr add 10.255.0.34/30 dev eth1
+
+# IP de r5 en el enlace fuera del arbol hacia r4:
+ip addr add 10.255.0.38/30 dev eth2
+
 # Para llegar a la LAN de B y devolver respuestas por rclb:
 ip route add 10.19.0.0/25 via 203.0.113.6
 
