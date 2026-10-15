@@ -60,6 +60,70 @@ Qué viene configurado:
 - **rint, rcla, rclb**: `kathara/base` (Linux). Las rutas estáticas y el NAT
   (`iptables`, ver Anexo 1) se configuran en sus `.startup`.
 
+### Avance de 1.1: árbol y direccionamiento
+
+Para organizar las rutas estáticas elegimos el siguiente árbol de recubrimiento.
+Conserva el camino ya configurado `rclb–r5–r6–rint`. Los enlaces restantes de
+la topología física no se utilizan como caminos de tránsito en este diseño.
+No se está configurando STP; cada ruta estática debe seguir el árbol hacia su destino.
+
+```text
+pcint
+  |
+rint
+  |
+ r6
+  |
+ r5 ─── rclb ─── pcb1
+  |        |
+  |       srvb
+  |
+ r2
+ / \
+r1  r4
+ |
+r3
+ |
+rcla
+ |
+pca1
+```
+
+El árbol muestra el diseño completo propuesto; hasta ahora se incorporaron
+`r2`, `r5`, `r6`, `rint`, `rclb`, `pcb1` y `pcint`. Las otras ramas y el
+direccionamiento de `srvb` siguen pendientes.
+
+Direcciones actualmente configuradas en `parte1/`:
+
+| Red o uso | Prefijo | Interfaces y direcciones |
+|---|---|---|
+| LAN B | `10.19.0.0/25` | `rclb eth1: 10.19.0.1`, `pcb1 eth0: 10.19.0.2` |
+| Enlace rclb–r5 | `203.0.113.4/30` | `r5 eth4: 203.0.113.5`, `rclb eth0: 203.0.113.6` |
+| Enlace r5–r6 | `10.255.0.0/30` | `r5 eth3: 10.255.0.1`, `r6 eth2: 10.255.0.2` |
+| Enlace r6–rint | `10.255.0.4/30` | `r6 eth0: 10.255.0.5`, `rint eth2: 10.255.0.6` |
+| Enlace r2–r5 | `10.255.0.8/30` | `r5 eth0: 10.255.0.9`, `r2 eth3: 10.255.0.10` |
+| Internet simulado | `8.8.8.0/24` | `rint eth0: 8.8.8.1`, `pcint eth0: 8.8.8.8` |
+| IP pública de SNAT de B | `203.0.113.1/32` | `rclb lo: 203.0.113.1` |
+| LAN A (configuración inicial parcial) | `192.168.100.0/24` | `pca1 eth0: 192.168.100.10`; gateway previsto `192.168.100.1`, aún pendiente en `rcla` |
+
+El enlace cliente–ISP usa direcciones públicas siguiendo la corrección enviada
+por los docentes. La IP de SNAT se conserva separada en `lo` de `rclb`.
+
+`r2` tiene una ruta por defecto hacia `r5` (`10.255.0.9`). Para que las
+respuestas regresen al enlace `r2–r5`, se agregaron rutas a `10.255.0.8/30`
+en `r6` vía `10.255.0.1`, en `rint` vía `10.255.0.5` y en `rclb` vía
+`203.0.113.5`. `r5` conoce esa red por estar directamente conectado.
+
+Flujo de trabajo: incorporar un nodo, probar el enlace directo, agregar las
+rutas de retorno y probar la conectividad de extremo a extremo.
+
+Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
+
+- Ping del enlace directo entre `r2` y `r5`.
+- `r2 → 8.8.8.8`: cuatro respuestas y 0 % de pérdida en la salida compartida.
+- `pcb1 → 10.255.0.10` y `pcb1 → 8.8.8.8`: funcionamiento confirmado.
+- `pcb1 → 10.255.0.9`: funcionamiento confirmado.
+
 ### Parte 1.4 – `parte1_4/`
 Igual a `parte1/`, más `r7` y `r8` (`kathara/frr`, con ospfd habilitado y
 `frr.conf` vacío). Se declaran en `lab.conf` sin interfaces: el grupo debe
