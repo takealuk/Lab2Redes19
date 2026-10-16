@@ -1,0 +1,35 @@
+# IP de rclb en el enlace hacia r5 (ISP):
+ip addr add 203.0.113.6/30 dev eth0
+
+# IP de rclb que las PCs de B usan como gateway:
+ip addr add 10.19.0.1/25 dev eth1
+
+# IP pública reservada para NAT del cliente B:
+ip addr add 203.0.113.1/32 dev lo
+
+# IP de rclb en la red publica de B:
+ip addr add 203.0.113.9/30 dev eth2
+
+# Traduce el origen de los paquetes de la LAN B que salen hacia el ISP:
+iptables -t nat -A POSTROUTING -s 10.19.0.0/25 -o eth0 -j SNAT --to-source 203.0.113.1
+
+# Para alcanzar el enlace r5-r6 a traves de r5:
+ip route add 10.255.0.0/30 via 203.0.113.5
+
+# Para alcanzar el enlace r6-rint por r5:
+ip route add 10.255.0.4/30 via 203.0.113.5
+
+# Para alcanzar el enlace r2-r5 por r5:
+ip route add 10.255.0.8/30 via 203.0.113.5
+
+# Para alcanzar a Internet simulado por r5:
+ip route add 8.8.8.0/24 via 203.0.113.5
+
+# Para alcanzar el enlace r2-r4 a traves de r5:
+ip route add 10.255.0.12/30 via 203.0.113.5
+
+# Para alcanzar el enlace r1-r2 a traves de r5:
+ip route add 10.255.0.16/30 via 203.0.113.5
+
+# Para alcanzar el enlace r1-r3 a traves de r5:
+ip route add 10.255.0.20/30 via 203.0.113.5

@@ -1,0 +1,34 @@
+# IP de r6 en el enlace hacia r5:
+ip addr add 10.255.0.2/30 dev eth2
+
+# IP de r6 en el enlace hacia rint:
+ip addr add 10.255.0.5/30 dev eth0
+
+# IP de r6 en el enlace fuera del arbol hacia r4:
+ip addr add 10.255.0.42/30 dev eth1
+
+# Para devolver paquetes a la LAN de B a traves de r5:
+ip route add 10.19.0.0/25 via 10.255.0.1
+
+# Para llegar a Internet simulado por rint:
+ip route add 8.8.8.0/24 via 10.255.0.6
+
+# Para alcanzar la IP publica de NAT de B por r5:
+ip route add 203.0.113.1/32 via 10.255.0.1
+
+# Para alcanzar el enlace r2-r5 y devolver respuestas hacia r2:
+ip route add 10.255.0.8/30 via 10.255.0.1
+
+# Para alcanzar el enlace r2-r4 a traves de r5:
+ip route add 10.255.0.12/30 via 10.255.0.1
+
+# Para alcanzar el enlace r1-r2 a traves de r5:
+ip route add 10.255.0.16/30 via 10.255.0.1
+
+# Para alcanzar el enlace r1-r3 a traves de r5:
+ip route add 10.255.0.20/30 via 10.255.0.1
+
+# Para alcanzar la red publica del servidor B a traves de r5:
+ip route add 203.0.113.8/30 via 10.255.0.1
+
+systemctl start frr

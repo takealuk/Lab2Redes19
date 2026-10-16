@@ -5,7 +5,8 @@ Cada carpeta es un laboratorio Kathará independiente:
 
 | Carpeta | Contenido | Partes |
 |---|---|---|
-| `parte1/` | Backbone inicial de RíoNet (r1–r6), rint/pcint, Cliente A y Cliente B | 1.1, 1.2, 1.3, 1.5 |
+| `parte1/` | Escenario estático de RíoNet, con NAT de B y servidor público | 1.1 |
+| `parte1_2/` | Copia de `parte1/` con OSPF habilitado en los enlaces internos de r1–r6; trabajo en curso | 1.2 |
 | `parte1_4/` | Igual a `parte1/` más los routers r7 y r8, **sin enlaces ni direccionamiento** | 1.4 |
 | `parte2/` | LAN del Cliente A con los switches P4 | 2.1 – 2.4 |
 
@@ -222,6 +223,57 @@ Para verificar los enlaces fuera del árbol, probar ping en ambos sentidos
 entre `.25` y `.26`, `.29` y `.30`, `.33` y `.34`, `.37` y `.38`, y `.41` y
 `.42`, todas dentro de `10.255.0.0/24`. Sus resultados quedan pendientes de
 confirmación; esta actualización verifica los archivos, no ejecuta la emulación.
+
+### Parte 1.2 – OSPF: avance actual
+
+Se creó `parte1_2/` como copia independiente de `parte1/`, conservando las IP,
+NAT, servicios y rutas estáticas de 1.1. La versión estática queda preservada.
+
+En `r1–r6`, los archivos `etc/frr/frr.conf` activan OSPF en ambos extremos
+de los nueve enlaces internos. Se utiliza una sola área `0.0.0.0`, suficiente
+para este escenario pequeño, sin introducir una división en múltiples áreas.
+Los identificadores son `1.1.1.1` para r1, hasta `6.6.6.6` para r6;
+identifican a los routers en OSPF, sin asignar nuevas IP a sus interfaces.
+
+Cada interfaz interna tiene costo explícito 10. Como no se especificaron
+diferencias de capacidad, todos los enlaces tienen igual preferencia: entre
+caminos internos se minimiza el número de enlaces. El valor 10 es una escala
+elegida, no una medida de latencia. Pueden existir caminos de igual costo.
+
+| Router | Interfaces con OSPF | Vecinos esperados |
+|---|---|---|
+| r1 | eth1, eth2 | r2, r3 |
+| r2 | eth0, eth1, eth2, eth3 | r1, r3, r4, r5 |
+| r3 | eth0, eth1, eth2 | r1, r2, r5 |
+| r4 | eth0, eth1, eth2 | r2, r5, r6 |
+| r5 | eth0, eth1, eth2, eth3 | r2, r3, r4, r6 |
+| r6 | eth1, eth2 | r4, r5 |
+
+Luca confirmó los vecinos esperados en estado `Full` tras aplicar la
+configuración. Se verifican dentro de cada router con:
+
+```bash
+vtysh -c "show ip ospf neighbor"
+vtysh -c "show ip ospf interface"
+```
+
+Las interfaces Ethernet conservan el tipo OSPF predeterminado `BROADCAST`;
+por eso aparecen roles DR y BDR aun cuando cada enlace conecta dos routers.
+No se habilitó OSPF hacia `rint`, `rcla` ni `rclb` en este avance.
+
+**Este escenario todavía no completa 1.2.** Las rutas estáticas siguen presentes:
+formar adyacencias no demuestra que el forwarding use rutas aprendidas por OSPF.
+Queda revisar y retirar las rutas estáticas que OSPF reemplaza, configurar los
+anuncios de redes del ISP y prefijos públicos de clientes y la salida a Internet,
+completar la conectividad de A para las pruebas, capturar el arranque OSPF,
+comparar LSDB y forwarding en al menos dos routers y analizar los caminos
+A–B y A–Internet según los costos.
+
+Para ejecutar esta copia, detener primero el laboratorio anterior desde su
+carpeta con `kathara lclean`; luego ejecutar `kathara lstart` desde `parte1_2/`.
+Para aplicar cambios de archivos en la copia ya activa, usar `kathara lrestart`
+desde `parte1_2/`. La captura de NAT de 1.1 se conserva únicamente en
+`parte1/shared/nat-b.pcap`; las capturas de OSPF de 1.2 están pendientes.
 
 ### Parte 1.4 – `parte1_4/`
 Igual a `parte1/`, más `r7` y `r8` (`kathara/frr`, con ospfd habilitado y
