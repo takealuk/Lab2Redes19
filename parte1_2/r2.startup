@@ -10,11 +10,5 @@ ip addr add 10.255.0.17/30 dev eth0
 # IP de r2 en el enlace fuera del arbol hacia r3:
 ip addr add 10.255.0.29/30 dev eth1
 
-# Para llegar a otras redes a traves de r5:
-ip route add default via 10.255.0.9
-
-# Para alcanzar el enlace r1-r3 a traves de r1:
-ip route add 10.255.0.20/30 via 10.255.0.18
-
 # Inicia FRR, el servicio de routing que trae el laboratorio base
 systemctl start frr
