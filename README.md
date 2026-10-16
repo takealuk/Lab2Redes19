@@ -227,7 +227,8 @@ confirmación; esta actualización verifica los archivos, no ejecuta la emulaci�
 ### Parte 1.2 – OSPF: avance actual
 
 Se creó `parte1_2/` como copia independiente de `parte1/`, conservando las IP,
-NAT, servicios y rutas estáticas de 1.1. La versión estática queda preservada.
+NAT y servicios de 1.1. Posteriormente se retiraron las rutas estáticas internas
+heredadas que OSPF reemplaza. La versión estática de `parte1/` queda preservada.
 
 En `r1–r6`, los archivos `etc/frr/frr.conf` activan OSPF en ambos extremos
 de los nueve enlaces internos. Se utiliza una sola área `0.0.0.0`, suficiente
@@ -261,10 +262,23 @@ Las interfaces Ethernet conservan el tipo OSPF predeterminado `BROADCAST`;
 por eso aparecen roles DR y BDR aun cuando cada enlace conecta dos routers.
 No se habilitó OSPF hacia `rint`, `rcla` ni `rclb` en este avance.
 
-**Este escenario todavía no completa 1.2.** Las rutas estáticas siguen presentes:
-formar adyacencias no demuestra que el forwarding use rutas aprendidas por OSPF.
-Queda revisar y retirar las rutas estáticas que OSPF reemplaza, configurar los
-anuncios de redes del ISP y prefijos públicos de clientes y la salida a Internet,
+**Routing interno migrado a OSPF.** Se quitaron las rutas por defecto del árbol
+estático en `r1–r4`, la ruta interna explícita de `r2` y las rutas a enlaces
+del escenario anterior en `r5` y `r6`. Se mantienen las direcciones y el inicio
+de FRR. En `r1`, Luca verificó vecinos `Full`, rutas internas remotas `O>*`
+(seleccionadas e instaladas) y ping a `10.255.0.2` en `r6`: cuatro respuestas,
+0 % de pérdida después del reinicio. Para algunos prefijos hay dos siguientes
+saltos OSPF de igual costo. Ya no aparece la ruta por defecto estática de `r1`.
+
+Esta limpieza no elimina todas las rutas estáticas del laboratorio: siguen
+las de clientes, hosts y `rint`, y temporalmente las de borde en `r5/r6`
+hacia Internet y destinos de B. No se redistribuyen indiscriminadamente.
+La LAN privada de B no debe anunciarse mediante OSPF.
+
+**Este escenario todavía no completa 1.2.** Ya se anuncian las nueve subredes
+internas entre `r1–r6`; todavía no las de los enlaces hacia clientes y `rint`.
+Queda configurar esos anuncios y los prefijos públicos detrás de los clientes,
+ajustar las rutas estáticas restantes según su función y completar la salida a Internet,
 completar la conectividad de A para las pruebas, capturar el arranque OSPF,
 comparar LSDB y forwarding en al menos dos routers y analizar los caminos
 A–B y A–Internet según los costos.

@@ -16,25 +16,13 @@ ip addr add 10.255.0.38/30 dev eth2
 # Para llegar a la LAN de B y devolver respuestas por rclb:
 ip route add 10.19.0.0/25 via 203.0.113.6
 
-# Para llegar al enlace r6-rint por r6:
-ip route add 10.255.0.4/30 via 10.255.0.2
-
 # Para llegar a Internet simulado por r6:
 ip route add 8.8.8.0/24 via 10.255.0.2
 
 # Para alcanzar la IP publica de NAT de B por rclb
 ip route add 203.0.113.1/32 via 203.0.113.6
 
-# Para alcanzar el enlace r2-r4 a traves de r2:
-ip route add 10.255.0.12/30 via 10.255.0.10
-
-# Para alcanzar el enlace r1-r2 a traves de r2:
-ip route add 10.255.0.16/30 via 10.255.0.10
-
-# Para alcanzar el enlace r1-r3 a traves de r2:
-ip route add 10.255.0.20/30 via 10.255.0.10
-
-# Para alcanzar la red publica del servidor B a traves de rclb:
+# Para alcanzar la red publica del servidor B por rclb:
 ip route add 203.0.113.8/30 via 203.0.113.6
 
 # Inicia FRR, el servicio de routing que trae el laboratorio base
