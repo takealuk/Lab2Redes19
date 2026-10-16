@@ -91,7 +91,8 @@ pca1
 
 El árbol muestra el diseño completo propuesto; hasta ahora se incorporaron
 `r1`, `r2`, `r3`, `r4`, `r5`, `r6`, `rint`, `rclb`, `pcb1`, `pcint` y `srvb`.
-La rama de `rcla` sigue pendiente.
+La rama de A también está numerada: `rcla` tiene direcciones en sus dos interfaces.
+En 1.1 se verifica su conectividad directa, sin NAT ni rutas hacia Internet para A.
 
 Direcciones actualmente configuradas en `parte1/`:
 
@@ -113,7 +114,8 @@ Direcciones actualmente configuradas en `parte1/`:
 | Internet simulado | `8.8.8.0/24` | `rint eth0: 8.8.8.1`, `pcint eth0: 8.8.8.8` |
 | IP pública de SNAT de B | `203.0.113.1/32` | `rclb lo: 203.0.113.1` |
 | Red pública del servidor B | `203.0.113.8/30` | `rclb eth2: 203.0.113.9`, `srvb eth0: 203.0.113.10` |
-| LAN A (configuración inicial parcial) | `192.168.100.0/24` | `pca1 eth0: 192.168.100.10`; gateway previsto `192.168.100.1`, aún pendiente en `rcla` |
+| Enlace r3–rcla | `203.0.113.12/30` | `r3 eth3: 203.0.113.13`, `rcla eth0: 203.0.113.14` |
+| LAN A | `192.168.100.0/24` | `rcla eth1: 192.168.100.1`, `pca1 eth0: 192.168.100.10` |
 
 El enlace cliente–ISP usa direcciones públicas siguiendo la corrección enviada
 por los docentes. La IP de SNAT se conserva separada en `lo` de `rclb`.
@@ -144,8 +146,8 @@ esa subred por estar directamente conectado; `r4` la alcanza mediante su
 ruta por defecto hacia `r2`.
 El camino hacia Internet es `r3 → r1 → r2 → r5 → r6 → rint → pcint`.
 Los seis routers del backbone ya tienen configurada su conexión al árbol;
-los cinco enlaces fuera del árbol también están numerados. Sigue pendiente
-la configuración de `rcla`. Según la aclaración docente, se numera todo, pero
+los cinco enlaces fuera del árbol y la rama de A también están numerados.
+Según la aclaración docente, se numera todo, pero
 no es necesario enrutar hacia todas las interfaces: se conservan las rutas
 necesarias para los servicios y el diseño estático elegido.
 
@@ -168,7 +170,28 @@ Las respuestas hacia `8.8.8.0/24` usan las rutas ya existentes.
 Flujo de trabajo: incorporar un nodo, probar el enlace directo, agregar las
 rutas de retorno y probar la conectividad de extremo a extremo.
 
+### Evidencia de NAT
+
+La captura [nat-b.pcap](parte1/shared/nat-b.pcap) contiene cuatro intercambios
+ICMP completos entre `pcb1` y `8.8.8.8`. Se verificaron las siguientes direcciones:
+
+| Momento | Origen | Destino |
+|---|---|---|
+| Solicitud antes de SNAT | `10.19.0.2` | `8.8.8.8` |
+| Solicitud después de SNAT | `203.0.113.1` | `8.8.8.8` |
+| Respuesta desde Internet | `8.8.8.8` | `203.0.113.1` |
+| Respuesta entregada a la LAN | `8.8.8.8` | `10.19.0.2` |
+
+Los identificadores y números de secuencia ICMP permiten relacionar cada
+solicitud y respuesta antes y después de la traducción. La captura evidencia
+SNAT en la salida y la traducción inversa de las respuestas hacia la PC privada.
+
+### Pruebas
+
 Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
+
+- Cliente A: pings `rcla → 203.0.113.13`, `rcla → 192.168.100.10` y
+  `pca1 → 192.168.100.1` funcionando; solo se probó conectividad directa.
 
 - Ping directo entre `rclb` y `srvb`: funcionamiento confirmado.
 - `pcint → 203.0.113.10`: cuatro respuestas, 0 % de pérdida en la salida compartida.

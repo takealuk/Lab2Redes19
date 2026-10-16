@@ -1,0 +1,5 @@
+# IP de rcla en el enlace hacia r3 (ISP):
+ip addr add 203.0.113.14/30 dev eth0
+
+# IP de rcla que la PC de A usa como gateway:
+ip addr add 192.168.100.1/24 dev eth1
