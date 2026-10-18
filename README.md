@@ -275,10 +275,37 @@ las de clientes, hosts y `rint`, y temporalmente las de borde en `r5/r6`
 hacia Internet y destinos de B. No se redistribuyen indiscriminadamente.
 La LAN privada de B no debe anunciarse mediante OSPF.
 
+**Prefijos públicos de B anunciados y verificados.** En `r5`, la lista
+`PUBLICOS_B` permite exactamente `203.0.113.1/32` (IP de SNAT) y
+`203.0.113.8/30` (servidor). El `route-map ANUNCIAR_B permit 1` selecciona
+esas rutas; el número 1 identifica el orden de la regla y no es un costo.
+`redistribute kernel route-map ANUNCIAR_B` incorpora a OSPF únicamente esas
+rutas del kernel creadas mediante `ip route add`. El filtro excluye la LAN
+privada de B y la ruta a Internet existente en r5.
+
+Se conservan en `r5.startup` las dos rutas hacia `rclb` (`203.0.113.6`):
+permiten alcanzar los destinos detrás del cliente, que no ejecuta OSPF.
+Se quitaron de `r6.startup` las rutas estáticas equivalentes hacia esos dos
+prefijos; r6 ahora los aprende mediante OSPF.
+
+Luca verificó desde r1 los dos anuncios externos originados por `5.5.5.5`
+con `show ip ospf database external`. Sin métrica ni tipo explícitos, se
+observaron anuncios tipo externo 2, métrica 20. En r1 ambas rutas aparecen
+seleccionadas e instaladas por OSPF, con siguientes saltos por r2 y r3.
+Tras eliminar las rutas estáticas en ejecución de r6, también se comprobaron
+ambas rutas seleccionadas e instaladas por OSPF vía `10.255.0.1` (r5).
+Esta verificación comprueba anuncios y selección de rutas, no constituye
+todavía una prueba completa de conectividad desde A.
+
+El enlace de acceso `r5–rclb` conserva sus IP y no forma adyacencias OSPF.
+Por ahora no se anuncia su subred mediante una interfaz pasiva: los destinos
+públicos de B se alcanzan mediante los anuncios externos de r5. Se deja esa
+opción fuera de este avance.
+
 **Este escenario todavía no completa 1.2.** Ya se anuncian las nueve subredes
-internas entre `r1–r6`; todavía no las de los enlaces hacia clientes y `rint`.
-Queda configurar esos anuncios y los prefijos públicos detrás de los clientes,
-ajustar las rutas estáticas restantes según su función y completar la salida a Internet,
+internas entre `r1–r6` y los dos prefijos públicos de B. Queda definir los
+anuncios necesarios para A y la salida a Internet,
+ajustar las rutas estáticas restantes según su función,
 completar la conectividad de A para las pruebas, capturar el arranque OSPF,
 comparar LSDB y forwarding en al menos dos routers y analizar los caminos
 A–B y A–Internet según los costos.
