@@ -1,0 +1,5 @@
+kathara exec r1 -- vtysh -c "show ip ospf neighbor"
+
+Neighbor ID     Pri State           Up Time         Dead Time Address         Interface                        RXmtL RqstL DBsmL
+2.2.2.2           1 Full/DR         6m24s             35.625s 10.255.0.17     eth1:10.255.0.18                     0     0     0
+3.3.3.3           1 Full/DR         6m24s             35.626s 10.255.0.22     eth2:10.255.0.21                     0     0     0
