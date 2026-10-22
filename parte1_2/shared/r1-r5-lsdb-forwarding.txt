@@ -1,0 +1,107 @@
+# Base de datos OSPF
+kathara exec r1 -- vtysh -c "show ip ospf database"
+
+       OSPF Router with ID (1.1.1.1)
+
+                Router Link States (Area 0.0.0.0)
+
+Link ID         ADV Router      Age  Seq#       CkSum  Link count
+1.1.1.1        1.1.1.1          736 0x80000008 0xa9ff 2
+2.2.2.2        2.2.2.2          728 0x8000000b 0xfa0e 4
+3.3.3.3        3.3.3.3          732 0x80000009 0xc0ee 4
+4.4.4.4        4.4.4.4          734 0x80000009 0xc731 3
+5.5.5.5        5.5.5.5          729 0x8000000a 0x1eb7 4
+6.6.6.6        6.6.6.6          730 0x80000006 0xd2a6 2
+
+                Net Link States (Area 0.0.0.0)
+
+Link ID         ADV Router      Age  Seq#       CkSum
+10.255.0.2     6.6.6.6          730 0x80000001 0xfb11
+10.255.0.9     5.5.5.5          738 0x80000001 0x0b0f
+10.255.0.14    4.4.4.4          734 0x80000001 0xf428
+10.255.0.17    2.2.2.2          737 0x80000001 0x7cb1
+10.255.0.22    3.3.3.3          737 0x80000001 0x6eb2
+10.255.0.30    3.3.3.3          732 0x80000001 0x40d4
+10.255.0.34    5.5.5.5          733 0x80000001 0x629a
+10.255.0.38    5.5.5.5          738 0x80000001 0x5c98
+10.255.0.42    6.6.6.6          740 0x80000001 0x48a0
+
+                AS External Link States
+
+Link ID         ADV Router      Age  Seq#       CkSum  Route
+0.0.0.0        1.1.1.1          777 0x80000001 0x299b E2 0.0.0.0/0 [0x0]
+0.0.0.0        6.6.6.6          780 0x80000001 0x921e E2 0.0.0.0/0 [0x0]
+203.0.113.1    5.5.5.5          777 0x80000001 0xd19a E2 203.0.113.1/32 [0x0]
+203.0.113.8    5.5.5.5          777 0x80000001 0x79ee E2 203.0.113.8/30 [0x0]
+
+
+kathara exec r5 -- vtysh -c "show ip ospf database"
+
+       OSPF Router with ID (5.5.5.5)
+
+                Router Link States (Area 0.0.0.0)
+
+Link ID         ADV Router      Age  Seq#       CkSum  Link count
+1.1.1.1        1.1.1.1          739 0x80000008 0xa9ff 2
+2.2.2.2        2.2.2.2          729 0x8000000b 0xfa0e 4
+3.3.3.3        3.3.3.3          733 0x80000009 0xc0ee 4
+4.4.4.4        4.4.4.4          733 0x80000009 0xc731 3
+5.5.5.5        5.5.5.5          728 0x8000000a 0x1eb7 4
+6.6.6.6        6.6.6.6          729 0x80000006 0xd2a6 2
+
+                Net Link States (Area 0.0.0.0)
+
+Link ID         ADV Router      Age  Seq#       CkSum
+10.255.0.2     6.6.6.6          729 0x80000001 0xfb11
+10.255.0.9     5.5.5.5          737 0x80000001 0x0b0f
+10.255.0.14    4.4.4.4          734 0x80000001 0xf428
+10.255.0.17    2.2.2.2          738 0x80000001 0x7cb1
+10.255.0.22    3.3.3.3          740 0x80000001 0x6eb2
+10.255.0.30    3.3.3.3          733 0x80000001 0x40d4
+10.255.0.34    5.5.5.5          732 0x80000001 0x629a
+10.255.0.38    5.5.5.5          737 0x80000001 0x5c98
+10.255.0.42    6.6.6.6          739 0x80000001 0x48a0
+
+                AS External Link States
+
+Link ID         ADV Router      Age  Seq#       CkSum  Route
+0.0.0.0        1.1.1.1          779 0x80000001 0x299b E2 0.0.0.0/0 [0x0]
+0.0.0.0        6.6.6.6          779 0x80000001 0x921e E2 0.0.0.0/0 [0x0]
+203.0.113.1    5.5.5.5          777 0x80000001 0xd19a E2 203.0.113.1/32 [0x0]
+203.0.113.8    5.5.5.5          777 0x80000001 0x79ee E2 203.0.113.8/30 [0x0]
+
+
+# Rutas instaladas en Linux para reenviar paquetes
+kathara exec r1 -- ip route
+
+default via 10.255.0.25 dev eth0
+10.255.0.0/30 nhid 19 proto ospf metric 20
+10.255.0.8/30 nhid 13 via 10.255.0.17 dev eth1 proto ospf metric 20
+10.255.0.12/30 nhid 13 via 10.255.0.17 dev eth1 proto ospf metric 20
+10.255.0.16/30 dev eth1 proto kernel scope link src 10.255.0.18
+10.255.0.20/30 dev eth2 proto kernel scope link src 10.255.0.21
+10.255.0.24/30 dev eth0 proto kernel scope link src 10.255.0.26
+10.255.0.28/30 nhid 19 proto ospf metric 20
+10.255.0.32/30 nhid 20 via 10.255.0.22 dev eth2 proto ospf metric 20
+10.255.0.36/30 nhid 19 proto ospf metric 20
+10.255.0.40/30 nhid 13 via 10.255.0.17 dev eth1 proto ospf metric 20
+203.0.113.1 nhid 19 proto ospf metric 20
+203.0.113.8/30 nhid 19 proto ospf metric 20
+203.0.113.12/30 nhid 20 via 10.255.0.22 dev eth2 proto ospf metric 20
+
+kathara exec r5 -- ip route
+
+default nhid 42 via 10.255.0.2 dev eth3 proto ospf metric 20
+10.255.0.0/30 dev eth3 proto kernel scope link src 10.255.0.1
+10.255.0.8/30 dev eth0 proto kernel scope link src 10.255.0.9
+10.255.0.12/30 nhid 20 proto ospf metric 20
+10.255.0.16/30 nhid 21 via 10.255.0.10 dev eth0 proto ospf metric 20
+10.255.0.20/30 nhid 26 via 10.255.0.33 dev eth1 proto ospf metric 20
+10.255.0.28/30 nhid 27 proto ospf metric 20
+10.255.0.32/30 dev eth1 proto kernel scope link src 10.255.0.34
+10.255.0.36/30 dev eth2 proto kernel scope link src 10.255.0.38
+10.255.0.40/30 nhid 41 proto ospf metric 20
+203.0.113.1 nhid 16 via 203.0.113.6 dev eth4 proto static metric 20
+203.0.113.4/30 dev eth4 proto kernel scope link src 203.0.113.5
+203.0.113.8/30 nhid 16 via 203.0.113.6 dev eth4 proto static metric 20
+203.0.113.12/30 nhid 26 via 10.255.0.33 dev eth1 proto ospf metric 20
