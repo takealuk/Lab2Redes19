@@ -400,10 +400,110 @@ registra una consulta posterior con r2 y r3 en `Full/DR`, y colas
 RXmtL/RqstL/DBsmL en cero. La consulta es local y no genera paquetes OSPF:
 el TXT confirma el estado posterior y complementa la captura de arranque.
 
-**Pendiente para completar 1.2:** guardar y comparar LSDB y forwarding de
-al menos dos routers; comprobar los caminos A–B (usando srvb como destino
-público) y A–Internet, relacionándolos con los costos y posibles alternativas
-de igual costo; y completar la explicación propia de las evidencias.
+### Evidencias y consultas de 1.2
+
+Los siguientes archivos guardan observaciones reales compartidas por Luca
+el 22/10/2026. No son configuraciones ni se ejecutan al iniciar el laboratorio.
+Kathará comparte `parte1_2/shared/` como `/shared` dentro de los dispositivos.
+
+| Archivo | Contenido y propósito |
+|---|---|
+| [ospf-arranque-r1-r2.pcap](parte1_2/shared/ospf-arranque-r1-r2.pcap) | Paquetes del arranque OSPF entre r1 y r2; se abre con Wireshark para estudiar los mensajes descritos arriba. |
+| [r1-show-ip-ospf-neighbor.txt](parte1_2/shared/r1-show-ip-ospf-neighbor.txt) | Consulta posterior de vecinos de r1: r2 y r3 en Full/DR, sin elementos pendientes en las colas mostradas. |
+| [r1-r5-lsdb-forwarding.txt](parte1_2/shared/r1-r5-lsdb-forwarding.txt) | LSDB y tabla principal de rutas de Linux de r1 y r5, para comparar información del protocolo con decisiones de reenvío. |
+| [caminos-a-b-a-internet.txt](parte1_2/shared/caminos-a-b-a-internet.txt) | Consultas de rutas en r3 y traceroute ICMP desde pca1 hacia srvb y pcint; permiten contrastar rutas elegidas y saltos observados. |
+
+Los comandos siguientes se ejecutan desde PowerShell, ubicado en `parte1_2/`,
+con el laboratorio encendido y OSPF estabilizado. `kathara exec EQUIPO --`
+ejecuta el resto del comando dentro del equipo indicado. `vtysh -c` consulta
+FRR; `ip route` consulta las rutas de Linux. Son consultas de solo lectura.
+
+**Vecinos.** El comando guardado en el TXT es:
+
+```powershell
+kathara exec r1 -- vtysh -c "show ip ospf neighbor"
+```
+
+`Full` indica que se completó la sincronización con el vecino. DR es el rol
+elegido en ese enlace Ethernet de tipo OSPF broadcast. El TXT confirma el
+estado posterior al intercambio; no es necesario que el comando aparezca
+en la captura, porque consultar FRR no genera paquetes OSPF.
+
+**Captura.** En el comando `tcpdump` usado arriba, `-n` evita resolver nombres,
+`-i eth1` selecciona el enlace r1–r2 y `-w` escribe un archivo PCAP.
+`-U` escribe los paquetes conforme llegan, `ip proto 89` selecciona OSPF
+y `&` deja la captura en segundo plano para iniciar FRR a continuación.
+`pkill -INT -x tcpdump` envía una señal de interrupción a los procesos tcpdump
+del router y permite cerrar el archivo. La captura es del enlace r1–r2;
+no contiene todo el tráfico de los demás enlaces del backbone.
+
+**LSDB y forwarding.** Se ejecutaron:
+
+```powershell
+kathara exec r1 -- vtysh -c "show ip ospf database"
+kathara exec r5 -- vtysh -c "show ip ospf database"
+kathara exec r1 -- ip route
+kathara exec r5 -- ip route
+```
+
+Las LSDB observadas contienen los mismos identificadores, secuencias y checksums:
+seis Router LSAs, nueve Network LSAs y cuatro anuncios externos E2.
+Estos últimos corresponden a las salidas por defecto de r1 y r6 y a los
+dos prefijos públicos de B originados por r5. Las edades difieren levemente
+porque las consultas no son simultáneas. La red pública de A forma parte
+de la información de r3 como red de su interfaz pasiva, no de un anuncio externo.
+
+Las tablas de forwarding difieren porque se calculan desde cada ubicación:
+r1 sale directamente a rint por su ruta estática, mientras r5 aprende la
+salida OSPF vía r6. Los destinos públicos de B son estáticos en r5 y
+aprendidos por OSPF en r1. La red pública de A se alcanza por r3 desde ambos,
+usando vecinos e interfaces diferentes. Por eso LSDB y forwarding no contienen
+la misma información: una describe topología y anuncios; la otra selecciona
+prefijos y siguientes saltos para reenviar, incluyendo conectadas y estáticas.
+
+En `ip route`, `nhid` referencia un objeto de siguiente salto de Linux y puede
+representar un grupo multipath. Se puede ampliar con `ip nexthop show`.
+El `metric 20` mostrado por Linux no debe interpretarse como el costo SPF
+del camino; para consultar las métricas OSPF se usa `vtysh`.
+
+**Caminos y costos.** Las consultas y sondas guardadas son:
+
+```powershell
+kathara exec r3 -- vtysh -c "show ip route 203.0.113.10"
+kathara exec r3 -- vtysh -c "show ip route 0.0.0.0/0"
+kathara exec pca1 -- traceroute -I -n 203.0.113.10
+kathara exec pca1 -- traceroute -I -n 8.8.8.8
+```
+
+Las consultas de r3 indican siguiente salto, origen y métrica de la ruta
+seleccionada. `traceroute` contrasta el recorrido con sondas de TTL creciente;
+`-I` usa ICMP y `-n` muestra direcciones sin resolución de nombres.
+Se dejaron los valores predeterminados: tres sondas por salto. Cada tiempo
+es de ida y vuelta de una sonda hasta quien responde, no la latencia aislada
+de un enlace. La versión final del TXT conserva esas nuevas ejecuciones.
+
+| Destino | Recorrido observado |
+|---|---|
+| Servidor público B | `pca1 → rcla → r3 → r5 → rclb → srvb` |
+| Internet simulado | `pca1 → rcla → r3 → r1 → rint → pcint` |
+
+En el traceroute a pcint, el cuarto salto responde como `10.255.0.6`, una
+dirección de rint en su interfaz hacia r6. No significa que la sonda haya
+atravesado r6: el salto anterior es r1 y el router puede responder con una
+dirección de otra interfaz. El recorrido observado concuerda con las rutas.
+
+Cada enlace interno tiene costo 10. Para B, r3 alcanza directamente al
+anunciante r5 con costo interno 10. El prefijo del servidor se observa como
+externo E2 de métrica 20: esa cifra no suma los costos de enlaces internos.
+Las salidas por defecto también son E2, con igual métrica externa 10;
+desde r3, alcanzar r1 cuesta 10 y alcanzar r6 por r5 cuesta 20, lo que
+explica la elección de r1. Los caminos de igual costo observados desde r1
+hacia B no implican que todos los pares de extremos tengan ECMP.
+OSPF decide dentro del ISP; los saltos de acceso dependen de las redes
+conectadas, gateways y rutas estáticas de clientes y bordes.
+
+Queda que el grupo integre e interprete estas evidencias en su informe,
+revise tablas y diagramas y reproduzca las verificaciones de entrega en la VM.
 
 Para ejecutar esta copia, detener primero el laboratorio anterior desde su
 carpeta con `kathara lclean`; luego ejecutar `kathara lstart` desde `parte1_2/`.

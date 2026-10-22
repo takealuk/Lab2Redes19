@@ -1,0 +1,35 @@
+kathara exec r3 -- vtysh -c "show ip route 203.0.113.10"
+
+Routing entry for 203.0.113.8/30
+  Known via "ospf", distance 110, metric 20, best
+  Last update 00:15:44 ago
+  Flags: Selected
+  Status: Installed
+  * 10.255.0.34, via eth2, weight 1
+
+kathara exec r3 -- vtysh -c "show ip route 0.0.0.0/0"
+
+Routing entry for 0.0.0.0/0
+  Known via "ospf", distance 110, metric 10, best
+  Last update 00:15:49 ago
+  Flags: Selected
+  Status: Installed
+  * 10.255.0.21, via eth0, weight 1
+
+kathara exec pca1 -- traceroute -I -n 203.0.113.10
+
+traceroute to 203.0.113.10 (203.0.113.10), 30 hops max, 60 byte packets
+ 1  192.168.100.1  0.333 ms  0.500 ms  0.716 ms
+ 2  203.0.113.13  1.006 ms  1.322 ms  1.520 ms
+ 3  10.255.0.34  1.849 ms  2.165 ms  2.361 ms
+ 4  203.0.113.6  2.670 ms  2.868 ms  3.174 ms
+ 5  203.0.113.10  3.780 ms  4.087 ms  4.278 ms
+
+kathara exec pca1 -- traceroute -I -n 8.8.8.8
+
+traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
+ 1  192.168.100.1  0.345 ms  0.494 ms  0.689 ms
+ 2  203.0.113.13  1.190 ms  1.498 ms  1.667 ms
+ 3  10.255.0.21  1.866 ms  2.117 ms  2.277 ms
+ 4  10.255.0.6  2.684 ms  3.024 ms  3.202 ms
+ 5  8.8.8.8  3.412 ms  3.633 ms  3.851 ms
