@@ -100,7 +100,9 @@ Las rutas de retorno a `203.0.113.12/30` siguen el árbol:
 `rint → r6 → r5 → r2 → r1 → r3 → rcla`. En r3 esa red está directamente
 conectada. El recorrido de ida es
 `pca1 → rcla → r3 → r1 → r2 → r5 → r6 → rint → pcint`.
-Esta configuración de A todavía no se replicó en `parte1_2/`.
+En `parte1_2/` también están configurados la ruta por defecto y SNAT de rcla,
+el retorno desde rint y el anuncio OSPF de la red pública de A desde r3.
+La conectividad de extremo a extremo se verificó tras recrear ese escenario.
 
 Direcciones actualmente configuradas en `parte1/`:
 
@@ -340,19 +342,75 @@ Por ahora no se anuncia su subred mediante una interfaz pasiva: los destinos
 públicos de B se alcanzan mediante los anuncios externos de r5. Se deja esa
 opción fuera de este avance.
 
-**Este escenario todavía no completa 1.2.** Ya se anuncian las nueve subredes
-internas entre `r1–r6` y los dos prefijos públicos de B. Queda definir los
-anuncios necesarios para A y la salida a Internet,
-ajustar las rutas estáticas restantes según su función,
-completar la conectividad de A para las pruebas, capturar el arranque OSPF,
-comparar LSDB y forwarding en al menos dos routers y analizar los caminos
-A–B y A–Internet según los costos.
+**Salidas por defecto y cliente A.** r1 tiene una ruta por defecto hacia
+rint `10.255.0.25` y r6 hacia rint `10.255.0.6`. Ambos usan
+`default-information originate`, sin `always`: anuncian la salida mientras
+exista una ruta por defecto instalada. Luca verificó en r5 una ruta por
+defecto OSPF seleccionada e instalada, métrica 10, vía r6 `10.255.0.2`.
+Se retiraron las rutas específicas hacia `8.8.8.0/24` de r5 y r6.
+
+rcla usa una ruta por defecto hacia r3 y SNAT a `203.0.113.14`.
+En r3, eth3 participa en el área 0 como interfaz pasiva: anuncia
+`203.0.113.12/30` sin formar adyacencias con rcla. Se verificó en r6 la
+ruta OSPF instalada a ese prefijo, métrica 30, vía r5.
+rclb tiene una ruta por defecto hacia r5 `203.0.113.5`, necesaria también
+para devolver las respuestas de srvb a A.
+
+**Limpieza de rutas heredadas.** Se eliminaron las siete rutas específicas
+de rclb, reemplazadas por su ruta por defecto; las rutas a la LAN privada
+de B de r5, r6 y rint; y cuatro rutas de rint hacia enlaces internos.
+En r1–r6 no quedan rutas estáticas que impongan el árbol interno de 1.1.
+Se conservan las dos rutas públicas de B en FRR de r5, las salidas por
+defecto de r1/r6, los gateways de clientes y hosts, y tres rutas públicas
+de retorno en rint. Este último no ejecuta OSPF y conserva los retornos
+de A y B vía r6: no tiene retorno de respaldo si falla r6 o su enlace a rint.
+
+**Pruebas persistentes confirmadas el 22/10/2026.** Tras `lclean` y `lstart`,
+incluyendo la última limpieza de rint, Luca verificó en Windows con Docker:
+pings de pca1 y pcb1 a `8.8.8.8`, cuatro respuestas y 0 % de pérdida;
+HTTP de pca1 y pcint a `203.0.113.10`, ambos `200 OK`.
+Antes de esa última limpieza también se verificaron ping A–srvb sin pérdida
+y la regla SNAT de A con tráfico registrado. Repetir las pruebas de entrega
+en la VM del curso.
+
+**Captura del arranque OSPF.**
+[ospf-arranque-r1-r2.pcap](parte1_2/shared/ospf-arranque-r1-r2.pcap)
+contiene 40 paquetes OSPF en el enlace r1–r2, durante unos 40,6 segundos.
+Se capturó temporalmente en r1 eth1 antes de iniciar FRR:
+
+```bash
+tcpdump -ni eth1 -U -w /shared/ospf-arranque-r1-r2.pcap 'ip proto 89' &
+```
+
+Tras recrear el laboratorio, se detuvo con
+`kathara exec r1 -- pkill -INT -x tcpdump`. La línea temporal se retiró
+del startup para no sobrescribir la evidencia. La revisión identificó:
+
+| Paquetes | Mensaje | Función |
+|---|---|---|
+| 1–9 | Hello | Descubrimiento, aproximadamente cada 10 segundos |
+| 10–14 | Database Description | Intercambio de resúmenes de LSDB |
+| 15–16 | Link State Request | Solicitud de LSAs faltantes |
+| 17 en adelante | Link State Update | Transferencia y propagación de LSAs |
+| 28 y 32 | Link State Acknowledgment | Confirmación de recepción |
+
+La sincronización se observa alrededor del segundo 40. El archivo
+[r1-show-ip-ospf-neighbor.txt](parte1_2/shared/r1-show-ip-ospf-neighbor.txt)
+registra una consulta posterior con r2 y r3 en `Full/DR`, y colas
+RXmtL/RqstL/DBsmL en cero. La consulta es local y no genera paquetes OSPF:
+el TXT confirma el estado posterior y complementa la captura de arranque.
+
+**Pendiente para completar 1.2:** guardar y comparar LSDB y forwarding de
+al menos dos routers; comprobar los caminos A–B (usando srvb como destino
+público) y A–Internet, relacionándolos con los costos y posibles alternativas
+de igual costo; y completar la explicación propia de las evidencias.
 
 Para ejecutar esta copia, detener primero el laboratorio anterior desde su
 carpeta con `kathara lclean`; luego ejecutar `kathara lstart` desde `parte1_2/`.
 Para aplicar cambios de archivos en la copia ya activa, usar `kathara lrestart`
 desde `parte1_2/`. La captura de NAT de 1.1 se conserva únicamente en
-`parte1/shared/nat-b.pcap`; las capturas de OSPF de 1.2 están pendientes.
+`parte1/shared/nat-b.pcap` y `parte1/shared/nat-a.pcap`; las evidencias OSPF
+de 1.2 están en `parte1_2/shared/`.
 
 ### Parte 1.4 – `parte1_4/`
 Igual a `parte1/`, más `r7` y `r8` (`kathara/frr`, con ospfd habilitado y
