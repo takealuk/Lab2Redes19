@@ -275,16 +275,18 @@ las de clientes, hosts y `rint`, y temporalmente las de borde en `r5/r6`
 hacia Internet y destinos de B. No se redistribuyen indiscriminadamente.
 La LAN privada de B no debe anunciarse mediante OSPF.
 
-**Prefijos públicos de B anunciados y verificados.** En `r5`, la lista
-`PUBLICOS_B` permite exactamente `203.0.113.1/32` (IP de SNAT) y
-`203.0.113.8/30` (servidor). El `route-map ANUNCIAR_B permit 1` selecciona
-esas rutas; el número 1 identifica el orden de la regla y no es un costo.
-`redistribute kernel route-map ANUNCIAR_B` incorpora a OSPF únicamente esas
-rutas del kernel creadas mediante `ip route add`. El filtro excluye la LAN
-privada de B y la ruta a Internet existente en r5.
+**Prefijos públicos de B anunciados y verificados.** En `r5`, las rutas a
+`203.0.113.1/32` (IP de SNAT) y `203.0.113.8/30` (servidor) se definen
+en `etc/frr/frr.conf` mediante `ip route`, con siguiente salto `203.0.113.6`
+(`rclb`). El cliente no ejecuta OSPF, por lo que estas rutas de acceso siguen
+siendo necesarias. Se retiraron sus comandos equivalentes de `r5.startup`.
 
-Se conservan en `r5.startup` las dos rutas hacia `rclb` (`203.0.113.6`):
-permiten alcanzar los destinos detrás del cliente, que no ejecuta OSPF.
+`redistribute static` anuncia las rutas estáticas de FRR. Actualmente solo
+se definen allí esos dos destinos públicos; la LAN privada de B y la ruta
+a Internet permanecen configuradas desde Linux y no se redistribuyen.
+No se utilizan prefix-list ni route-map. Si se agregan otras rutas estáticas
+en FRR, también se anunciarán: hay que revisar ese alcance antes de hacerlo.
+
 Se quitaron de `r6.startup` las rutas estáticas equivalentes hacia esos dos
 prefijos; r6 ahora los aprende mediante OSPF.
 
@@ -296,6 +298,13 @@ Tras eliminar las rutas estáticas en ejecución de r6, también se comprobaron
 ambas rutas seleccionadas e instaladas por OSPF vía `10.255.0.1` (r5).
 Esta verificación comprueba anuncios y selección de rutas, no constituye
 todavía una prueba completa de conectividad desde A.
+
+Tras simplificar la redistribución, el 22/10/2026 Luca confirmó en el entorno
+local Windows con Docker y Kathará: las dos rutas `S>*` en r5, vecinos Full
+en r1 y ambos prefijos `O>*` en r1 con siguientes saltos por r2 y r3.
+También comprobó `pcb1 → 8.8.8.8` y `pcint → 203.0.113.10`, ambos con
+cuatro respuestas y 0 % de pérdida, y HTTP desde pcint al servidor con
+`200 OK`. Las verificaciones de entrega deben repetirse en la VM del curso.
 
 El enlace de acceso `r5–rclb` conserva sus IP y no forma adyacencias OSPF.
 Por ahora no se anuncia su subred mediante una interfaz pasiva: los destinos
