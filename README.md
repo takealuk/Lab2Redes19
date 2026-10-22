@@ -93,7 +93,14 @@ pca1
 El árbol muestra el diseño completo propuesto; hasta ahora se incorporaron
 `r1`, `r2`, `r3`, `r4`, `r5`, `r6`, `rint`, `rclb`, `pcb1`, `pcint` y `srvb`.
 La rama de A también está numerada: `rcla` tiene direcciones en sus dos interfaces.
-En 1.1 se verifica su conectividad directa, sin NAT ni rutas hacia Internet para A.
+En 1.1 también se configuraron la salida a Internet simulado y SNAT para A.
+`rcla` usa una ruta por defecto hacia r3 (`203.0.113.13`) y traduce el origen
+de `192.168.100.0/24` a su IP pública de eth0, `203.0.113.14`.
+Las rutas de retorno a `203.0.113.12/30` siguen el árbol:
+`rint → r6 → r5 → r2 → r1 → r3 → rcla`. En r3 esa red está directamente
+conectada. El recorrido de ida es
+`pca1 → rcla → r3 → r1 → r2 → r5 → r6 → rint → pcint`.
+Esta configuración de A todavía no se replicó en `parte1_2/`.
 
 Direcciones actualmente configuradas en `parte1/`:
 
@@ -187,12 +194,34 @@ Los identificadores y números de secuencia ICMP permiten relacionar cada
 solicitud y respuesta antes y después de la traducción. La captura evidencia
 SNAT en la salida y la traducción inversa de las respuestas hacia la PC privada.
 
+La captura [nat-a.pcap](parte1/shared/nat-a.pcap) se realizó en `rcla`,
+con `tcpdump -ni any -w /shared/nat-a.pcap 'icmp and host 8.8.8.8'`,
+mientras se ejecutaba `ping -c 4 8.8.8.8` desde `pca1`.
+Se revisaron sus 16 registros: cuatro intercambios ICMP, observados antes
+y después de NAT en ambos sentidos, con identificador 4 y secuencias 1–4.
+
+| Momento | Origen | Destino |
+|---|---|---|
+| Solicitud antes de SNAT | `192.168.100.10` | `8.8.8.8` |
+| Solicitud después de SNAT | `203.0.113.14` | `8.8.8.8` |
+| Respuesta desde Internet | `8.8.8.8` | `203.0.113.14` |
+| Respuesta entregada a la LAN | `8.8.8.8` | `192.168.100.10` |
+
+La captura se detuvo desde otra consola con
+`kathara exec rcla -- pkill -INT -x tcpdump`; el archivo quedó completo.
+
 ### Pruebas
 
 Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
 
 - Cliente A: pings `rcla → 203.0.113.13`, `rcla → 192.168.100.10` y
-  `pca1 → 192.168.100.1` funcionando; solo se probó conectividad directa.
+  `pca1 → 192.168.100.1` funcionando.
+- El 22/10/2026, tras recrear `parte1/` en Windows con Docker y Kathará,
+  Luca confirmó `pca1 → 8.8.8.8`: cuatro respuestas, 0 % de pérdida y TTL 57.
+  La regla SNAT en rcla registró un paquete de 84 bytes, traducido a
+  `203.0.113.14`. También confirmó `pcb1 → 8.8.8.8` con cuatro respuestas
+  y 0 % de pérdida. La captura `nat-a.pcap` verifica la traducción de A;
+  las pruebas de entrega deben repetirse en la VM del curso.
 
 - Ping directo entre `rclb` y `srvb`: funcionamiento confirmado.
 - `pcint → 203.0.113.10`: cuatro respuestas, 0 % de pérdida en la salida compartida.
