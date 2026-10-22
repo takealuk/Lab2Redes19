@@ -16,5 +16,8 @@ ip route add default via 10.255.0.9
 # Para alcanzar el enlace r1-r3 a traves de r1:
 ip route add 10.255.0.20/30 via 10.255.0.18
 
+# Para alcanzar la red publica de A por r1
+ip route add 203.0.113.12/30 via 10.255.0.18
+
 # Inicia FRR, el servicio de routing que trae el laboratorio base
 systemctl start frr
