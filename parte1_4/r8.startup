@@ -1,1 +1,10 @@
+# IP de r8 en el enlace fuera del arbol hacia r6:
+ip addr add 10.255.0.50/30 dev eth0
+
+# IP de r8 en el enlace fuera del arbol hacia r7:
+ip addr add 10.255.0.54/30 dev eth1
+
+# IP de r8 en el enlace hacia pcc1:
+ip addr add 203.0.113.17/29 dev eth2
+
 systemctl start frr

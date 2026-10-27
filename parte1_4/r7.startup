@@ -1,1 +1,7 @@
+# IP de r7 en el enlace fuera del arbol hacia r4:
+ip addr add 10.255.0.46/30 dev eth0
+
+# IP de r7 en el enlace fuera del arbol hacia r8:
+ip addr add 10.255.0.53/30 dev eth1
+
 systemctl start frr
