@@ -1,0 +1,7 @@
+Routing entry for 10.255.0.16/30
+  Known via "ospf", distance 110, metric 7, best
+  Last update 00:01:29 ago
+  Flags: Selected 
+  Status: Installed 
+  * 10.255.0.1, via eth2, weight 1
+
