@@ -546,7 +546,7 @@ rcla (gateway) ──┼── p4sw2 ── pc_dev1, pc_dev2, pc_dev3
 `pc_admin4` es el host adicional para la **Reflexión 2.2**. Está conectado a p4sw1,
 pero la idea es que no se incluya en la configuración del switch.
 
-### Avance de 2.1: numeración de ADMIN, DESARROLLO e INVITADOS
+### Avance de 2.1: numeración de las cuatro redes
 
 Se configuró la subred privada `10.19.0.0/26` para ADMIN, dentro del bloque
 `10.19.0.0/16` del grupo 19. Un `/27` ofrece solo 30 direcciones utilizables
@@ -636,8 +636,31 @@ disponible comienza en `10.19.2.0`. En binario, el prefijo fija los primeros
 siete bits del tercer octeto y deja su último bit para hosts; así agrupa
 0–1, 2–3, etc., pero no 1–2.
 
-**Pendiente de 2.1:** numerar servidores sin
-superposiciones dentro del Cliente A; completar figura y tabla; identificar
+**SERVIDORES:** se configuró `203.0.113.32/27`, dentro del bloque público
+`203.0.113.0/24`. Un `/28` ofrece 14 IPs utilizables y no alcanza para
+los 16 hosts requeridos; el `/27` ofrece 30. La máscara es `255.255.255.224`,
+la dirección de red `203.0.113.32` y el broadcast `203.0.113.63`.
+No se superpone con los prefijos públicos usados en la parte 1:
+`203.0.113.1/32`, `203.0.113.4/30`, `203.0.113.8/30`,
+`203.0.113.12/30` y `203.0.113.16/29`.
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth3, hacia p4sw4 | `203.0.113.33/27` | No corresponde para este enlace |
+| srv1 | eth0 | `203.0.113.34/27` | `203.0.113.33` |
+
+En srv1, las IP y la ruta por defecto se configuran antes de preparar
+el certificado e iniciar Apache. Se conservaron los servicios HTTP/HTTPS.
+No se aplica NAT a esta red pública; la integración y las rutas externas
+se resolverán en el escenario correspondiente.
+
+La numeración de las cuatro redes está guardada en los `.startup` y fue
+revisada contra `lab.conf`, sin IPs duplicadas ni superposiciones dentro de A.
+No se ejecutaron pruebas de conectividad ni de HTTP/HTTPS de esta parte.
+Siguen pendientes las aclaraciones docentes sobre capacidad de DESARROLLO
+y reutilización de rangos privados entre clientes.
+
+**Pendiente de 2.1:** completar figura y tabla; identificar
 dominios de broadcast y colisión y obtener la captura ARP/Ethernet solicitada.
 
 **srv1** inicia Apache con HTTP (80) y HTTPS (443, certificado autofirmado).
