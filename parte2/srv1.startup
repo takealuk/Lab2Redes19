@@ -1,5 +1,12 @@
 # Servidor web HTTP (80) y HTTPS (443) con certificado autofirmado.
 # El direccionamiento debe ser configurado por el grupo.
+
+# IP pública de srv1:
+ip addr add 203.0.113.34/27 dev eth0
+
+# Salida por el gateway de SERVIDORES:
+ip route add default via 203.0.113.33
+
 openssl req -x509 -nodes -newkey rsa:2048 -days 365 -subj "/CN=srv1" \
     -keyout /etc/ssl/private/ssl-cert-snakeoil.key \
     -out /etc/ssl/certs/ssl-cert-snakeoil.pem > /dev/null 2>&1

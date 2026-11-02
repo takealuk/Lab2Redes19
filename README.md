@@ -546,7 +546,123 @@ rcla (gateway) ──┼── p4sw2 ── pc_dev1, pc_dev2, pc_dev3
 `pc_admin4` es el host adicional para la **Reflexión 2.2**. Está conectado a p4sw1,
 pero la idea es que no se incluya en la configuración del switch.
 
-Ningún host tiene dirección IP: la numeración es parte del Entregable 2.1.
+### Avance de 2.1: numeración de las cuatro redes
+
+Se configuró la subred privada `10.19.0.0/26` para ADMIN, dentro del bloque
+`10.19.0.0/16` del grupo 19. Un `/27` ofrece solo 30 direcciones utilizables
+y no alcanza para los 31 hosts solicitados. El `/26` ofrece 62, suficientes
+también para el gateway; su máscara es `255.255.255.192`, la dirección de
+red es `10.19.0.0` y el broadcast es `10.19.0.63`.
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth0, hacia p4sw1 | `10.19.0.1/26` | No corresponde para este enlace |
+| pc_admin1 | eth0 | `10.19.0.2/26` | `10.19.0.1` |
+| pc_admin2 | eth0 | `10.19.0.3/26` | `10.19.0.1` |
+| pc_admin3 | eth0 | `10.19.0.4/26` | `10.19.0.1` |
+| pc_admin4 | eth0 | `10.19.0.5/26` | `10.19.0.1` |
+
+Las direcciones se guardaron con `ip addr add ... dev ...` en los `.startup`.
+Cada PC tiene `ip route add default via 10.19.0.1` para entregar al gateway
+los paquetes destinados fuera de su LAN. Las interfaces se identificaron
+en `lab.conf`: eth0 de rcla conecta con p4sw1; cada PC conecta por su eth0.
+No se modificó la topología ni se asignaron IP de gestión a los switches.
+
+`pc_admin4` también se numera en 2.1. Para la reflexión de 2.2 se dejará
+inicialmente su MAC fuera de las tablas de forwarding del switch:
+configurar la IP de un host no equivale a registrar su MAC en esas tablas.
+
+**Decisión provisional:** ADMIN se numera con el tercer octeto en cero,
+según lo acordado por el grupo. Se superpone con la LAN privada de B de
+la parte 1 (`10.19.0.0/25`). Las redes privadas pueden reutilizar prefijos
+si la comunicación se realiza mediante destinos públicos y NAT, pero la
+superposición dificulta el acceso directo entre sus direcciones privadas.
+Se consultará al docente qué conectividad entre clientes espera en la
+integración de la parte 3 y, si corresponde, se cambiará ADMIN a otra subred
+del mismo `/16` antes de integrar los escenarios.
+
+**Verificación realizada:** revisión de los archivos y consistencia de las
+IPs, prefijos, gateways e interfaces. No se levantó ni probó la conectividad
+de la parte 2; el programa P4 sigue siendo el esqueleto y todavía no implementa
+forwarding. No se afirma que los pings funcionen con esta configuración.
+
+**DESARROLLO:** se configuró `10.19.0.64/26`, sin superposición con ADMIN.
+La máscara es `255.255.255.192`, la dirección de red `10.19.0.64`
+y el broadcast `10.19.0.127`.
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth1, hacia p4sw2 | `10.19.0.65/26` | No corresponde para este enlace |
+| pc_dev1 | eth0 | `10.19.0.66/26` | `10.19.0.65` |
+| pc_dev2 | eth0 | `10.19.0.67/26` | `10.19.0.65` |
+| pc_dev3 | eth0 | `10.19.0.68/26` | `10.19.0.65` |
+
+Las IPs y rutas por defecto están guardadas en los `.startup`, con el mismo
+procedimiento usado en ADMIN. Se revisó su consistencia en los archivos;
+todavía no se probó conectividad, dado que falta implementar el forwarding P4.
+
+**Criterio provisional de capacidad:** el `/26` minimiza el desperdicio si
+los 62 hosts requeridos incluyen el gateway. Ofrece 62 IPs utilizables,
+por lo que admite 61 equipos más el gateway. Si se requieren 62 equipos
+además del gateway, habrá que ampliar a `/25` y revisar el direccionamiento
+antes de aplicarlo. El grupo está esperando la respuesta docente en el foro;
+se eligió mantener `/26` mientras se aclara esta interpretación.
+
+**INVITADOS:** se requiere capacidad para 256 hosts.
+Un `/24` solo ofrece 254 direcciones utilizables, mientras que un `/23`
+ofrece 510. Se eligió `10.19.2.0/23`, con máscara `255.255.254.0` y rango
+completo desde `10.19.2.0` hasta `10.19.3.255`, sin superponer ADMIN ni
+DESARROLLO. Las direcciones y rutas por defecto se guardaron en los `.startup`:
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth2, hacia p4sw3 | `10.19.2.1/23` | No corresponde para este enlace |
+| pc_guest1 | eth0 | `10.19.2.2/23` | `10.19.2.1` |
+| pc_guest2 | eth0 | `10.19.2.3/23` | `10.19.2.1` |
+| pc_guest3 | eth0 | `10.19.2.4/23` | `10.19.2.1` |
+
+Se revisaron IPs, prefijos, gateways e interfaces contra `lab.conf`, sin
+superposiciones con ADMIN y DESARROLLO. No se ejecutaron pruebas de
+conectividad: el forwarding P4 todavía no está implementado. La política
+que restringe el tráfico de INVITADOS corresponde a 2.3 y no se configura
+mediante estas direcciones ni mediante las rutas por defecto.
+
+Un `/23` agrupa dos bloques `/24` consecutivos y alineados: el tercer
+octeto de su dirección de red debe ser par (0, 2, 4, etc.). Por eso
+`10.19.1.0/23` no define una red desde `10.19.1.0` hasta `10.19.2.255`:
+esa dirección pertenece a `10.19.0.0/23`, que abarca los terceros octetos
+0 y 1 y se superpone con las redes ya asignadas. El siguiente bloque `/23`
+disponible comienza en `10.19.2.0`. En binario, el prefijo fija los primeros
+siete bits del tercer octeto y deja su último bit para hosts; así agrupa
+0–1, 2–3, etc., pero no 1–2.
+
+**SERVIDORES:** se configuró `203.0.113.32/27`, dentro del bloque público
+`203.0.113.0/24`. Un `/28` ofrece 14 IPs utilizables y no alcanza para
+los 16 hosts requeridos; el `/27` ofrece 30. La máscara es `255.255.255.224`,
+la dirección de red `203.0.113.32` y el broadcast `203.0.113.63`.
+No se superpone con los prefijos públicos usados en la parte 1:
+`203.0.113.1/32`, `203.0.113.4/30`, `203.0.113.8/30`,
+`203.0.113.12/30` y `203.0.113.16/29`.
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth3, hacia p4sw4 | `203.0.113.33/27` | No corresponde para este enlace |
+| srv1 | eth0 | `203.0.113.34/27` | `203.0.113.33` |
+
+En srv1, las IP y la ruta por defecto se configuran antes de preparar
+el certificado e iniciar Apache. Se conservaron los servicios HTTP/HTTPS.
+No se aplica NAT a esta red pública; la integración y las rutas externas
+se resolverán en el escenario correspondiente.
+
+La numeración de las cuatro redes está guardada en los `.startup` y fue
+revisada contra `lab.conf`, sin IPs duplicadas ni superposiciones dentro de A.
+No se ejecutaron pruebas de conectividad ni de HTTP/HTTPS de esta parte.
+Siguen pendientes las aclaraciones docentes sobre capacidad de DESARROLLO
+y reutilización de rangos privados entre clientes.
+
+**Pendiente de 2.1:** completar figura y tabla; identificar
+dominios de broadcast y colisión y obtener la captura ARP/Ethernet solicitada.
+
 **srv1** inicia Apache con HTTP (80) y HTTPS (443, certificado autofirmado).
 
 ### Switches P4
