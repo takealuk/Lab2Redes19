@@ -1,0 +1,11 @@
+# Gateway de ADMIN:
+ip addr add 10.19.0.1/26 dev eth0
+
+# Gateway de DESARROLLO:
+ip addr add 10.19.0.65/26 dev eth1
+
+# Gateway de INVITADOS:
+ip addr add 10.19.2.1/23 dev eth2
+
+# Gateway de SERVIDORES:
+ip addr add 203.0.113.33/27 dev eth3

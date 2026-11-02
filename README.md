@@ -660,8 +660,113 @@ No se ejecutaron pruebas de conectividad ni de HTTP/HTTPS de esta parte.
 Siguen pendientes las aclaraciones docentes sobre capacidad de DESARROLLO
 y reutilización de rangos privados entre clientes.
 
-**Pendiente de 2.1:** completar figura y tabla; identificar
-dominios de broadcast y colisión y obtener la captura ARP/Ethernet solicitada.
+### Punto 2 de 2.1: dominios de broadcast y colisión
+
+Este punto requiere análisis de la topología y documentación, no cambios en
+las configuraciones. El conteo siguiente considera el comportamiento Ethernet
+previsto: cada switch P4 conecta los hosts de su LAN y propaga los broadcasts
+entre sus puertos, sin reenviarlos al puerto de ingreso. El esqueleto P4 aún
+no implementa ese forwarding, por lo que el conteo no constituye una prueba
+de conectividad ejecutada.
+
+Un dominio de broadcast comprende los equipos alcanzados por una trama
+broadcast de capa 2, como una solicitud ARP. El switch la distribuye dentro
+de la LAN, mientras rcla no la reenvía hacia sus otras interfaces.
+Resultan **cuatro dominios de broadcast**:
+
+| Dominio | Equipos e interfaz del gateway |
+|---|---|
+| ADMIN | pc_admin1–4, p4sw1 y rcla eth0 |
+| DESARROLLO | pc_dev1–3, p4sw2 y rcla eth1 |
+| INVITADOS | pc_guest1–3, p4sw3 y rcla eth2 |
+| SERVIDORES | srv1, p4sw4 y rcla eth3 |
+
+Por ejemplo, un ARP broadcast de pc_admin1 se distribuye hacia los demás
+hosts de ADMIN y su gateway, pero no hacia las otras tres LAN.
+
+Para los dominios de colisión se cuenta cada segmento Ethernet independiente
+conectado a un puerto del switch. En Kathará se identifican mediante los
+dominios declarados en `lab.conf`; en esta topología cada uno conecta dos
+interfaces. El conteo incluye al host adicional pc_admin4:
+
+| Switch | Enlaces a hosts | Enlace a rcla | Total |
+|---|---|---|---|
+| p4sw1 | 4 | 1 | 5 |
+| p4sw2 | 3 | 1 | 4 |
+| p4sw3 | 3 | 1 | 4 |
+| p4sw4 | 1 | 1 | 2 |
+| Total | 11 | 4 | **15** |
+
+Son `RCLA_SW1`–`RCLA_SW4`, `SW1_ADMIN1`–`SW1_ADMIN4`,
+`SW2_DEV1`–`SW2_DEV3`, `SW3_GUEST1`–`SW3_GUEST3` y `SW4_SRV1`.
+En Ethernet conmutada full-duplex no se producen las colisiones propias del
+medio compartido; aquí se cuentan los 15 segmentos separados por los puertos.
+El switch separa esos segmentos pero mantiene el dominio de broadcast de su
+LAN; el router separa los cuatro dominios de broadcast.
+
+### Punto 3 de 2.1: captura ARP/Ethernet
+
+Se creó `parte2_1/` como copia auxiliar de `parte2/`. En su `lab.conf`,
+pc_admin1 y pc_admin2 comparten directamente `ARP_TEST`, conservando
+`10.19.0.2/26` y `10.19.0.3/26`. No se alteraron los programas P4 ni los
+startups. Esta conexión permite observar ARP antes de implementar forwarding
+P4; no prueba los switches ni cambia el conteo de dominios de la topología
+original de `parte2/`.
+
+Se usó `kathara lstart` desde `parte2_1/` para abrir las terminales de los
+dispositivos. En pc_admin1 se preparó y ejecutó la captura:
+
+```bash
+ip neigh flush dev eth0
+tcpdump -i eth0 -w /shared/arp-admin.pcap
+```
+
+La primera instrucción elimina las asociaciones IP–MAC de esa interfaz.
+`-i eth0` selecciona la interfaz y `-w` guarda las tramas en un archivo,
+sin aplicar filtros de captura. En pc_admin2 se ejecutó:
+
+```bash
+ping -c 4 10.19.0.2
+```
+
+`-c 4` limita la prueba a cuatro solicitudes. Al terminar se detuvo tcpdump
+con Ctrl+C en pc_admin1. Si el entorno no transmite esa señal, puede usarse
+desde PowerShell `kathara exec pc_admin1 -- pkill -INT -x tcpdump`.
+La limpieza de vecinos de pc_admin1 no borra la caché de pc_admin2; si se
+repite la prueba y falta el ARP inicial, limpiar también la de pc_admin2
+antes de su ping. No es necesario usar el gateway para este destino local.
+
+La captura [arp-admin.pcap](parte2_1/shared/arp-admin.pcap) fue revisada:
+contiene 12 tramas y abarca aproximadamente 5,02 segundos.
+
+| Equipo | IP | MAC observada |
+|---|---|---|
+| pc_admin1, donde se captura | `10.19.0.2` | `b6:66:fd:3b:fc:86` |
+| pc_admin2, que inicia el ping | `10.19.0.3` | `52:18:a2:14:16:13` |
+
+| Tramas | Observación |
+|---|---|
+| 1 | pc_admin2 solicita la MAC de `10.19.0.2` mediante broadcast Ethernet (`ff:ff:ff:ff:ff:ff`). |
+| 2 | pc_admin1 responde por unicast indicando su MAC. |
+| 3–10 | Cuatro solicitudes ICMP y sus cuatro respuestas, encapsuladas en Ethernet unicast. |
+| 11–12 | Solicitud ARP posterior de pc_admin1 por pc_admin2 y respuesta, ambas unicast. |
+
+En las tramas ARP, EtherType es `0x0806`; la operación 1 identifica una
+solicitud y la 2 una respuesta. Los campos de emisor y objetivo permiten
+relacionar las IP y MAC con los hosts. En la solicitud inicial, el objetivo
+es `10.19.0.2` y todavía se busca su MAC. En la respuesta se informa la
+asociación con `b6:66:fd:3b:fc:86`. Las tramas del ping tienen EtherType
+`0x0800` (IPv4), MAC destino individual y TTL IP 64, coherente con una
+comunicación local sin routers intermedios.
+
+La secuencia evidencia resolución ARP seguida de comunicación IPv4 unicast.
+Las tramas 11–12 muestran además que una solicitud ARP puede ser unicast
+cuando se consulta una asociación ya conocida; no toda solicitud es broadcast.
+Las MAC corresponden a esta ejecución y pueden cambiar al recrear el escenario.
+El informe debe explicar estos resultados propios y el uso del escenario auxiliar.
+
+**Pendiente de 2.1:** completar figura y tabla; representar y explicar los
+dominios de broadcast y colisión e incorporar el análisis de la captura al informe.
 
 **srv1** inicia Apache con HTTP (80) y HTTPS (443, certificado autofirmado).
 
