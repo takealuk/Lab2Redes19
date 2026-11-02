@@ -1,0 +1,5 @@
+# IP de pc_admin2 en ADMIN
+ip addr add 10.19.0.3/26 dev eth0
+
+# Salida por el gateway de ADMIN
+ip route add default via 10.19.0.1

@@ -546,7 +546,51 @@ rcla (gateway) ──┼── p4sw2 ── pc_dev1, pc_dev2, pc_dev3
 `pc_admin4` es el host adicional para la **Reflexión 2.2**. Está conectado a p4sw1,
 pero la idea es que no se incluya en la configuración del switch.
 
-Ningún host tiene dirección IP: la numeración es parte del Entregable 2.1.
+### Avance de 2.1: numeración de ADMIN
+
+Se configuró la subred privada `10.19.0.0/26` para ADMIN, dentro del bloque
+`10.19.0.0/16` del grupo 19. Un `/27` ofrece solo 30 direcciones utilizables
+y no alcanza para los 31 hosts solicitados. El `/26` ofrece 62, suficientes
+también para el gateway; su máscara es `255.255.255.192`, la dirección de
+red es `10.19.0.0` y el broadcast es `10.19.0.63`.
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth0, hacia p4sw1 | `10.19.0.1/26` | No corresponde para este enlace |
+| pc_admin1 | eth0 | `10.19.0.2/26` | `10.19.0.1` |
+| pc_admin2 | eth0 | `10.19.0.3/26` | `10.19.0.1` |
+| pc_admin3 | eth0 | `10.19.0.4/26` | `10.19.0.1` |
+| pc_admin4 | eth0 | `10.19.0.5/26` | `10.19.0.1` |
+
+Las direcciones se guardaron con `ip addr add ... dev ...` en los `.startup`.
+Cada PC tiene `ip route add default via 10.19.0.1` para entregar al gateway
+los paquetes destinados fuera de su LAN. Las interfaces se identificaron
+en `lab.conf`: eth0 de rcla conecta con p4sw1; cada PC conecta por su eth0.
+No se modificó la topología ni se asignaron IP de gestión a los switches.
+
+`pc_admin4` también se numera en 2.1. Para la reflexión de 2.2 se dejará
+inicialmente su MAC fuera de las tablas de forwarding del switch:
+configurar la IP de un host no equivale a registrar su MAC en esas tablas.
+
+**Decisión provisional:** ADMIN se numera con el tercer octeto en cero,
+según lo acordado por el grupo. Se superpone con la LAN privada de B de
+la parte 1 (`10.19.0.0/25`). Las redes privadas pueden reutilizar prefijos
+si la comunicación se realiza mediante destinos públicos y NAT, pero la
+superposición dificulta el acceso directo entre sus direcciones privadas.
+Se consultará al docente qué conectividad entre clientes espera en la
+integración de la parte 3 y, si corresponde, se cambiará ADMIN a otra subred
+del mismo `/16` antes de integrar los escenarios.
+
+**Verificación realizada:** revisión de los archivos y consistencia de las
+IPs, prefijos, gateways e interfaces. No se levantó ni probó la conectividad
+de la parte 2; el programa P4 sigue siendo el esqueleto y todavía no implementa
+forwarding. No se afirma que los pings funcionen con esta configuración.
+
+**Pendiente de 2.1:** numerar DESARROLLO, INVITADOS y servidores sin
+superposiciones dentro del Cliente A; completar figura y tabla; identificar
+dominios de broadcast y colisión y obtener la captura ARP/Ethernet solicitada.
+La propuesta conversada para DESARROLLO todavía no fue aplicada.
+
 **srv1** inicia Apache con HTTP (80) y HTTPS (443, certificado autofirmado).
 
 ### Switches P4
