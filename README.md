@@ -546,7 +546,7 @@ rcla (gateway) ──┼── p4sw2 ── pc_dev1, pc_dev2, pc_dev3
 `pc_admin4` es el host adicional para la **Reflexión 2.2**. Está conectado a p4sw1,
 pero la idea es que no se incluya en la configuración del switch.
 
-### Avance de 2.1: numeración de ADMIN y DESARROLLO
+### Avance de 2.1: numeración de ADMIN, DESARROLLO e INVITADOS
 
 Se configuró la subred privada `10.19.0.0/26` para ADMIN, dentro del bloque
 `10.19.0.0/16` del grupo 19. Un `/27` ofrece solo 30 direcciones utilizables
@@ -608,7 +608,35 @@ además del gateway, habrá que ampliar a `/25` y revisar el direccionamiento
 antes de aplicarlo. El grupo está esperando la respuesta docente en el foro;
 se eligió mantener `/26` mientras se aclara esta interpretación.
 
-**Pendiente de 2.1:** numerar INVITADOS y servidores sin
+**INVITADOS:** se requiere capacidad para 256 hosts.
+Un `/24` solo ofrece 254 direcciones utilizables, mientras que un `/23`
+ofrece 510. Se eligió `10.19.2.0/23`, con máscara `255.255.254.0` y rango
+completo desde `10.19.2.0` hasta `10.19.3.255`, sin superponer ADMIN ni
+DESARROLLO. Las direcciones y rutas por defecto se guardaron en los `.startup`:
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth2, hacia p4sw3 | `10.19.2.1/23` | No corresponde para este enlace |
+| pc_guest1 | eth0 | `10.19.2.2/23` | `10.19.2.1` |
+| pc_guest2 | eth0 | `10.19.2.3/23` | `10.19.2.1` |
+| pc_guest3 | eth0 | `10.19.2.4/23` | `10.19.2.1` |
+
+Se revisaron IPs, prefijos, gateways e interfaces contra `lab.conf`, sin
+superposiciones con ADMIN y DESARROLLO. No se ejecutaron pruebas de
+conectividad: el forwarding P4 todavía no está implementado. La política
+que restringe el tráfico de INVITADOS corresponde a 2.3 y no se configura
+mediante estas direcciones ni mediante las rutas por defecto.
+
+Un `/23` agrupa dos bloques `/24` consecutivos y alineados: el tercer
+octeto de su dirección de red debe ser par (0, 2, 4, etc.). Por eso
+`10.19.1.0/23` no define una red desde `10.19.1.0` hasta `10.19.2.255`:
+esa dirección pertenece a `10.19.0.0/23`, que abarca los terceros octetos
+0 y 1 y se superpone con las redes ya asignadas. El siguiente bloque `/23`
+disponible comienza en `10.19.2.0`. En binario, el prefijo fija los primeros
+siete bits del tercer octeto y deja su último bit para hosts; así agrupa
+0–1, 2–3, etc., pero no 1–2.
+
+**Pendiente de 2.1:** numerar servidores sin
 superposiciones dentro del Cliente A; completar figura y tabla; identificar
 dominios de broadcast y colisión y obtener la captura ARP/Ethernet solicitada.
 
