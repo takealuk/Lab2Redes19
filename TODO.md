@@ -59,17 +59,20 @@ archivos como evidencia de ejecución exitosa.
 
 ## Punto 3: captura ARP/Ethernet
 
-- [ ] Definir cómo comunicar dos hosts del mismo dominio antes de programar
+- [x] Definir cómo comunicar dos hosts del mismo dominio antes de programar
   el switch, conforme pide la letra. El esqueleto P4 no reenvía tráfico;
   no asumir que el ping funcionará solo por asignar IPs. Si se utiliza un
   escenario auxiliar, documentar sus cambios y conservar la base P4.
-- [ ] Ejecutar la prueba y guardar una captura `.pcap` con solicitud y respuesta
+- [x] Ejecutar la prueba y guardar una captura `.pcap` con solicitud y respuesta
   ARP, registrando hosts, interfaces, comandos y condiciones del experimento.
-- [ ] Interpretar MAC origen/destino, broadcast Ethernet, EtherType y campos
+- [x] Interpretar MAC origen/destino, broadcast Ethernet, EtherType y campos
   ARP relevantes (operación, direcciones de emisor y objetivo).
-- [ ] Relacionar la resolución ARP con la comunicación posterior entre hosts.
-- [ ] Guardar la captura y resultados en `parte2/shared/` y enlazarlos desde
-  el README. Esta captura todavía no existe.
+- [x] Relacionar la resolución ARP con la comunicación posterior entre hosts.
+- [x] Guardar y enlazar la captura desde el README: se utilizó
+  `parte2_1/shared/arp-admin.pcap`, en vez de `parte2/shared/`, para conservar
+  separado el escenario auxiliar. pc_admin1 y pc_admin2 comparten ARP_TEST;
+  no se modificó parte2 ni se implementó forwarding P4. La captura revisada
+  tiene 12 tramas: ARP inicial, cuatro intercambios ICMP y ARP unicast posterior.
 
 ## Cierre de 2.1
 

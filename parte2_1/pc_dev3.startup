@@ -1,0 +1,5 @@
+# IP de pc_dev3 en DESARROLLO:
+ip addr add 10.19.0.68/26 dev eth0
+
+# Salida por el gateway de DESARROLLO:
+ip route add default via 10.19.0.65
