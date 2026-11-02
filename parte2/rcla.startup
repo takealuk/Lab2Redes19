@@ -1,2 +1,5 @@
 # Gateway de ADMIN:
 ip addr add 10.19.0.1/26 dev eth0
+
+# Gateway de DESARROLLO:
+ip addr add 10.19.0.65/26 dev eth1

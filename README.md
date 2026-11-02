@@ -546,7 +546,7 @@ rcla (gateway) ──┼── p4sw2 ── pc_dev1, pc_dev2, pc_dev3
 `pc_admin4` es el host adicional para la **Reflexión 2.2**. Está conectado a p4sw1,
 pero la idea es que no se incluya en la configuración del switch.
 
-### Avance de 2.1: numeración de ADMIN
+### Avance de 2.1: numeración de ADMIN y DESARROLLO
 
 Se configuró la subred privada `10.19.0.0/26` para ADMIN, dentro del bloque
 `10.19.0.0/16` del grupo 19. Un `/27` ofrece solo 30 direcciones utilizables
@@ -586,10 +586,31 @@ IPs, prefijos, gateways e interfaces. No se levantó ni probó la conectividad
 de la parte 2; el programa P4 sigue siendo el esqueleto y todavía no implementa
 forwarding. No se afirma que los pings funcionen con esta configuración.
 
-**Pendiente de 2.1:** numerar DESARROLLO, INVITADOS y servidores sin
+**DESARROLLO:** se configuró `10.19.0.64/26`, sin superposición con ADMIN.
+La máscara es `255.255.255.192`, la dirección de red `10.19.0.64`
+y el broadcast `10.19.0.127`.
+
+| Dispositivo | Interfaz | Dirección | Gateway |
+|---|---|---|---|
+| rcla | eth1, hacia p4sw2 | `10.19.0.65/26` | No corresponde para este enlace |
+| pc_dev1 | eth0 | `10.19.0.66/26` | `10.19.0.65` |
+| pc_dev2 | eth0 | `10.19.0.67/26` | `10.19.0.65` |
+| pc_dev3 | eth0 | `10.19.0.68/26` | `10.19.0.65` |
+
+Las IPs y rutas por defecto están guardadas en los `.startup`, con el mismo
+procedimiento usado en ADMIN. Se revisó su consistencia en los archivos;
+todavía no se probó conectividad, dado que falta implementar el forwarding P4.
+
+**Criterio provisional de capacidad:** el `/26` minimiza el desperdicio si
+los 62 hosts requeridos incluyen el gateway. Ofrece 62 IPs utilizables,
+por lo que admite 61 equipos más el gateway. Si se requieren 62 equipos
+además del gateway, habrá que ampliar a `/25` y revisar el direccionamiento
+antes de aplicarlo. El grupo está esperando la respuesta docente en el foro;
+se eligió mantener `/26` mientras se aclara esta interpretación.
+
+**Pendiente de 2.1:** numerar INVITADOS y servidores sin
 superposiciones dentro del Cliente A; completar figura y tabla; identificar
 dominios de broadcast y colisión y obtener la captura ARP/Ethernet solicitada.
-La propuesta conversada para DESARROLLO todavía no fue aplicada.
 
 **srv1** inicia Apache con HTTP (80) y HTTPS (443, certificado autofirmado).
 
