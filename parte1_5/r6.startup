@@ -1,0 +1,17 @@
+# IP de r6 en el enlace hacia r5:
+ip addr add 10.255.0.2/30 dev eth2
+
+# IP de r6 en el enlace hacia rint:
+ip addr add 10.255.0.5/30 dev eth0
+
+# IP de r6 en el enlace fuera del arbol hacia r4:
+ip addr add 10.255.0.42/30 dev eth1
+
+# IP de r6 en el enlace fuera del arbol hacia r8:
+ip addr add 10.255.0.49/30 dev eth3
+
+# Ruta por defecto hacia Internet a traves de rint:
+ip route add default via 10.255.0.6
+
+# Inicia FRR, el servicio de routing que trae el laboratorio base
+systemctl start frr
