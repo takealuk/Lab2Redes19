@@ -586,27 +586,33 @@ IPs, prefijos, gateways e interfaces. No se levantó ni probó la conectividad
 de la parte 2; el programa P4 sigue siendo el esqueleto y todavía no implementa
 forwarding. No se afirma que los pings funcionen con esta configuración.
 
-**DESARROLLO:** se configuró `10.19.0.64/26`, sin superposición con ADMIN.
-La máscara es `255.255.255.192`, la dirección de red `10.19.0.64`
-y el broadcast `10.19.0.127`.
+**DESARROLLO:** se configuró `10.19.0.128/25`, sin superposición con ADMIN
+ni INVITADOS. La máscara es `255.255.255.128`, la dirección de red
+`10.19.0.128` y el broadcast `10.19.0.255`.
 
 | Dispositivo | Interfaz | Dirección | Gateway |
 |---|---|---|---|
-| rcla | eth1, hacia p4sw2 | `10.19.0.65/26` | No corresponde para este enlace |
-| pc_dev1 | eth0 | `10.19.0.66/26` | `10.19.0.65` |
-| pc_dev2 | eth0 | `10.19.0.67/26` | `10.19.0.65` |
-| pc_dev3 | eth0 | `10.19.0.68/26` | `10.19.0.65` |
+| rcla | eth1, hacia p4sw2 | `10.19.0.129/25` | No corresponde para este enlace |
+| pc_dev1 | eth0 | `10.19.0.130/25` | `10.19.0.129` |
+| pc_dev2 | eth0 | `10.19.0.131/25` | `10.19.0.129` |
+| pc_dev3 | eth0 | `10.19.0.132/25` | `10.19.0.129` |
 
 Las IPs y rutas por defecto están guardadas en los `.startup`, con el mismo
 procedimiento usado en ADMIN. Se revisó su consistencia en los archivos;
 todavía no se probó conectividad, dado que falta implementar el forwarding P4.
 
-**Criterio provisional de capacidad:** el `/26` minimiza el desperdicio si
-los 62 hosts requeridos incluyen el gateway. Ofrece 62 IPs utilizables,
-por lo que admite 61 equipos más el gateway. Si se requieren 62 equipos
-además del gateway, habrá que ampliar a `/25` y revisar el direccionamiento
-antes de aplicarlo. El grupo está esperando la respuesta docente en el foro;
-se eligió mantener `/26` mientras se aclara esta interpretación.
+**Aclaración docente aplicada el 04/11/2026:** DESARROLLO debe admitir hasta
+62 dispositivos, por ejemplo PCs, simultáneamente. Se reemplazó el `/26`
+provisional por `/25`, que ofrece 126 IPs utilizables y permite alojar esos
+62 dispositivos además del gateway. Un `/26` solo permite 61 equipos más
+gateway. El nuevo bloque debe comenzar en `.128`: conservar `.65/25`
+ubicaría la interfaz en `10.19.0.0/25`, superpuesta con ADMIN. El espacio
+`10.19.0.64/26` queda disponible para otra asignación.
+
+Se actualizaron el gateway y las tres PCs tanto en `parte2/` como en
+`parte2_1/`, y se comprobó que sus configuraciones coinciden. No se ejecutaron
+pruebas de conectividad de DESARROLLO. La captura ARP existente sigue siendo
+válida: utiliza las PCs de ADMIN, cuyas direcciones no cambiaron.
 
 **INVITADOS:** se requiere capacidad para 256 hosts.
 Un `/24` solo ofrece 254 direcciones utilizables, mientras que un `/23`
@@ -657,8 +663,8 @@ se resolverán en el escenario correspondiente.
 La numeración de las cuatro redes está guardada en los `.startup` y fue
 revisada contra `lab.conf`, sin IPs duplicadas ni superposiciones dentro de A.
 No se ejecutaron pruebas de conectividad ni de HTTP/HTTPS de esta parte.
-Siguen pendientes las aclaraciones docentes sobre capacidad de DESARROLLO
-y reutilización de rangos privados entre clientes.
+Queda pendiente la aclaración docente sobre reutilización de rangos privados
+entre clientes. La duda sobre capacidad de DESARROLLO ya fue resuelta.
 
 ### Punto 2 de 2.1: dominios de broadcast y colisión
 
