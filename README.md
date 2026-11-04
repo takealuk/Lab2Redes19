@@ -362,8 +362,9 @@ de B de r5, r6 y rint; y cuatro rutas de rint hacia enlaces internos.
 En r1–r6 no quedan rutas estáticas que impongan el árbol interno de 1.1.
 Se conservan las dos rutas públicas de B en FRR de r5, las salidas por
 defecto de r1/r6, los gateways de clientes y hosts, y tres rutas públicas
-de retorno en rint. Este último no ejecuta OSPF y conserva los retornos
-de A y B vía r6: no tiene retorno de respaldo si falla r6 o su enlace a rint.
+de retorno en rint. Este último no ejecuta OSPF. Inicialmente los retornos
+de A y B estaban fijados vía r6; el ajuste multipath del 04/11/2026,
+documentado abajo, reemplaza ese retorno fijo en 1.2, 1.4 y 1.5.
 
 **Pruebas persistentes confirmadas el 22/10/2026.** Tras `lclean` y `lstart`,
 incluyendo la última limpieza de rint, Luca verificó en Windows con Docker:
@@ -513,9 +514,107 @@ desde `parte1_2/`. La captura de NAT de 1.1 se conserva únicamente en
 de 1.2 están en `parte1_2/shared/`.
 
 ### Parte 1.4 – `parte1_4/`
-Igual a `parte1/`, más `r7` y `r8` (`kathara/frr`, con ospfd habilitado y
-`frr.conf` vacío). Se declaran en `lab.conf` sin interfaces: el grupo debe
-agregar los enlaces, la nueva LAN de cliente en r8 y el direccionamiento.
+El escenario ya incorpora r7/r8, sus enlaces y la LAN del cliente nuevo
+`203.0.113.16/29`, con gateway r8 `203.0.113.17` y pcc1 `203.0.113.18`.
+Las evidencias previas están en `parte1_4/shared/`. Las repeticiones pendientes
+por el cambio de retorno de rint se detallan a continuación.
+
+### Ajuste del retorno de rint en 1.2, 1.4 y 1.5 — 04/11/2026
+
+Se reemplazó el siguiente salto único vía r6 por rutas estáticas multipath
+de igual peso hacia r1 (`10.255.0.26`, eth1 de rint) y r6 (`10.255.0.5`,
+eth2 de rint). No se agregó FRR/OSPF a rint ni se modificaron los costos
+OSPF, las direcciones o las reglas NAT. Los clientes conservan sus gateways.
+
+Se modificaron únicamente los `rint.startup` de estos escenarios:
+
+| Escenario | Prefijos con dos siguientes saltos |
+|---|---|
+| parte1_2 | `203.0.113.1/32`, `203.0.113.8/30`, `203.0.113.12/30` |
+| parte1_4 y parte1_5 | Los anteriores y `203.0.113.16/29` |
+
+Cada ruta se configura como un único comando; por ejemplo:
+
+```bash
+ip route add 203.0.113.1/32 \
+    nexthop via 10.255.0.26 \
+    nexthop via 10.255.0.5
+```
+
+Los dos siguientes saltos tienen peso 1 por defecto. Linux selecciona el
+camino mediante su mecanismo de hashing ECMP: no se exige alternancia por
+paquete ni un reparto exacto 50/50. Duplicar dos comandos `ip route add`
+para el mismo prefijo y prioridad devolvió `File exists` y no instaló el
+segundo. El kernel WSL anterior tampoco admitía multipath; la ruta se
+comprobó en la VM del curso y, tras actualizar WSL, en Docker sobre Windows.
+Si aparece `Multipath support not enabled in kernel`, es necesario resolver
+el soporte del entorno; no sustituir por comandos duplicados.
+
+**Verificado en 1.2:** las tres rutas se instalaron con ambos nexthop.
+Luca confirmó pings A/B a pcint y pcint a srvb, todos con cuatro respuestas
+y 0 % de pérdida, y HTTP pcint–srvb con `200 OK`.
+Las consultas de reenvío desde `8.8.8.8` por eth0 de rint seleccionaron
+r6 para `203.0.113.1` y `203.0.113.14`, y r1 para `203.0.113.10`.
+Una captura de texto posterior con `tcpdump -ni any icmp` confirmó cuatro
+intercambios por destino: solicitudes hacia NAT B saliendo por eth2 y hacia
+srvb por eth1; las respuestas de ambos regresaron por eth2. Esto demuestra
+uso de ambos enlaces y asimetría válida, no un reparto estadístico 50/50.
+Estas salidas fueron compartidas en el chat; aún no se guardó una nueva
+captura PCAP de este ajuste en el repositorio.
+
+Durante una prueba anterior al estado estable aparecieron bucles entre rint
+y sus vecinos, con ICMP Time Exceeded. Después se comprobaron vecinos Full
+y rutas públicas OSPF instaladas en r1/r6, y la repetición no mostró bucles.
+Antes de probar, esperar la estabilización y confirmar esas rutas específicas:
+las defaults de r1/r6 hacia rint no deben sustituirlas para estos destinos.
+
+**Alcance:** `parte1/` conserva su diseño estático anterior. `parte1_3/`
+contiene resultados de ensayos r1–r4 que no pasan por rint; este ajuste
+no exige repetirlos. Los cambios de 1.4 y 1.5 solo fueron revisados en los
+archivos: sus responsables deben ejecutar las siguientes verificaciones.
+
+#### Verificaciones pendientes en 1.4
+
+- [ ] Recrear el escenario desde su carpeta y esperar vecinos Full y rutas
+  públicas instaladas. Comprobar `kathara exec rint -- ip route`: los cuatro
+  prefijos deben mostrar ambos siguientes saltos. Revisar el startup log.
+- [ ] Repetir pings pca1–pcc1, pcint–pcc1 y pcc1–pcint. La primera prueba
+  sirve de control; las otras dos dependen directamente del nuevo retorno.
+  Confirmar también salida de A/B y acceso HTTP pcint–srvb.
+- [ ] Repetir la caída del enlace r6–r8 y la conectividad desde pcint hacia
+  pcc1. Guardar el nuevo traceroute: rint puede elegir ahora r1 o r6, por lo
+  que no se debe asumir el recorrido anterior que empezaba por r6.
+- [ ] Observar tráfico por ambos enlaces de rint usando varios destinos o
+  flujos. Si una prueba utiliza solo uno, no implica por sí sola un fallo
+  de ECMP. No identificar balanceo solo a partir de una ruta instalada.
+- [ ] Conservar resultados originales y guardar las nuevas evidencias con
+  nombres distintos y sus condiciones. Actualizar el informe para distinguir
+  las pruebas con retorno fijo de las realizadas con multipath.
+
+La medición de incorporación de la nueva LAN, desde habilitar los enlaces
+hasta que r1 instala la ruta, no usa rint y no requiere repetirse por este
+ajuste. Tampoco cambia su direccionamiento ni el anuncio OSPF del POP.
+
+#### Verificaciones pendientes en 1.5
+
+- [ ] Recrear el escenario y comprobar instalación de las cuatro rutas
+  multipath y ausencia de errores del startup de rint.
+- [ ] Repetir conectividad A/B–pcint, pcint–srvb por ping/HTTP y
+  pcint–pcc1/pcc1–pcint: son pruebas de integración afectadas por el retorno.
+  Confirmar uso de ambos enlaces con tráfico de varios destinos o flujos.
+- [ ] Como control, consultar rutas y traceroute r1–r6 en ambos sentidos
+  antes y después de la falla elegida en 1.5. No modificar los costos ni
+  forzar que los resultados coincidan con evidencias anteriores.
+- [ ] Documentar el nuevo retorno en el informe y conservar separadas las
+  evidencias nuevas, indicando que multipath no prueba por sí solo tolerancia
+  automática a cualquier caída de enlace o router.
+
+Las mediciones originales entre r1 y r6 utilizan destinos internos del ISP
+y no pasan por rint. No es obligatorio repetir su medición temporal solo
+por este cambio; la consulta de control comprueba que sigue vigente la
+selección del camino principal y de respaldo. Si el control encuentra
+diferencias o se cambian otros parámetros, revisar y repetir los ensayos
+correspondientes antes de dar 1.5 por validada con la configuración final.
 
 ---
 
