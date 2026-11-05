@@ -1,0 +1,5 @@
+# IP de pc_guest1 en INVITADOS:
+ip addr add 10.19.2.2/23 dev eth0
+
+# Salida por el gateway de INVITADOS:
+ip route add default via 10.19.2.1
