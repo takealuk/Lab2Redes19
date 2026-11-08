@@ -1,0 +1,8 @@
+PING 10.19.2.1 (10.19.2.1) 56(84) bytes of data.
+64 bytes from 10.19.2.1: icmp_seq=1 ttl=64 time=5.93 ms
+64 bytes from 10.19.2.1: icmp_seq=2 ttl=64 time=12.4 ms
+64 bytes from 10.19.2.1: icmp_seq=3 ttl=64 time=4.71 ms
+
+--- 10.19.2.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2008ms
+rtt min/avg/max/mdev = 4.709/7.686/12.425/3.387 ms
