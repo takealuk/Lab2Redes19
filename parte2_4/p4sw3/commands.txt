@@ -1,0 +1,18 @@
+table_add MyIngress.mac_table MyIngress.forward 02:00:00:00:00:03 => 1
+table_add MyIngress.mac_table MyIngress.forward 02:00:00:00:00:0c => 2
+table_add MyIngress.mac_table MyIngress.forward 02:00:00:00:00:0d => 3
+table_add MyIngress.mac_table MyIngress.forward 02:00:00:00:00:0e => 4
+table_add MyIngress.mac_table MyIngress.broadcast ff:ff:ff:ff:ff:ff =>
+mc_mgrp_create 1
+mc_node_create 0 1 2 3 4 
+mc_node_associate 1 0
+table_add MyIngress.restricted_ports MyIngress.mark_restricted 2 =>
+table_add MyIngress.restricted_ports MyIngress.mark_restricted 3 =>
+table_add MyIngress.restricted_ports MyIngress.mark_restricted 4 =>
+table_add MyIngress.acl MyIngress.allow 10.19.2.1 0&&&0 0&&&0 => 1
+table_add MyIngress.acl MyIngress.allow 203.0.113.34 6&&&0xff 80&&&0xffff => 2
+table_add MyIngress.acl MyIngress.allow 203.0.113.34 6&&&0xff 443&&&0xffff => 3
+table_add MyIngress.port_security MyIngress.ps_permit 1 02:00:00:00:00:03 =>
+table_add MyIngress.port_security MyIngress.ps_permit 2 02:00:00:00:00:0c =>
+table_add MyIngress.port_security MyIngress.ps_permit 3 02:00:00:00:00:0d =>
+table_add MyIngress.port_security MyIngress.ps_permit 4 02:00:00:00:00:0e =>
