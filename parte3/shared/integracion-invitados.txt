@@ -1,0 +1,47 @@
+Politica de INVITADOS - 10/11/2026
+Pruebas ejecutadas en la terminal de pc_guest1, antes de la prueba de MAC.
+
+root@pc_guest1:/# ping -c 4 10.19.2.1
+PING 10.19.2.1 (10.19.2.1) 56(84) bytes of data.
+64 bytes from 10.19.2.1: icmp_seq=1 ttl=64 time=1.74 ms
+64 bytes from 10.19.2.1: icmp_seq=2 ttl=64 time=0.665 ms
+64 bytes from 10.19.2.1: icmp_seq=3 ttl=64 time=0.666 ms
+64 bytes from 10.19.2.1: icmp_seq=4 ttl=64 time=0.643 ms
+
+--- 10.19.2.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3041ms
+rtt min/avg/max/mdev = 0.643/0.928/1.741/0.469 ms
+
+root@pc_guest1:/# curl --max-time 5 -I http://203.0.113.34/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 16:32:46 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+
+root@pc_guest1:/# curl -k --max-time 5 -I https://203.0.113.34/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 16:32:46 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+
+root@pc_guest1:/# ping -c 4 10.19.0.2
+PING 10.19.0.2 (10.19.0.2) 56(84) bytes of data.
+
+--- 10.19.0.2 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3061ms
+
+root@pc_guest1:/# ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3054ms

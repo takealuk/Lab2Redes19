@@ -1,0 +1,57 @@
+Salida a Internet y contadores SNAT - 10/11/2026
+Las dos consultas de rcla corresponden a momentos distintos de la misma serie.
+
+PS> kathara exec pc_admin1 -- ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=59 time=2.21 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=59 time=1.42 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=59 time=2.08 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=59 time=1.67 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 1.421/1.847/2.214/0.317 ms
+
+PS> kathara exec pcb1 -- ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=60 time=1.24 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=60 time=1.37 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=60 time=0.771 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=60 time=0.749 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 0.749/1.032/1.369/0.276 ms
+
+PS> kathara exec rcla -- iptables -t nat -L POSTROUTING -n -v
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DOCKER_POSTROUTING  0    --  *      *       0.0.0.0/0            127.0.0.11
+    1    84 SNAT       0    --  *      eth4    10.19.0.0/26         0.0.0.0/0            to:203.0.113.14
+    0     0 SNAT       0    --  *      eth4    10.19.0.128/25       0.0.0.0/0            to:203.0.113.14
+    0     0 SNAT       0    --  *      eth4    10.19.2.0/23         0.0.0.0/0            to:203.0.113.14
+
+PS> kathara exec rclb -- iptables -t nat -L POSTROUTING -n -v
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DOCKER_POSTROUTING  0    --  *      *       0.0.0.0/0            127.0.0.11
+    1    84 SNAT       0    --  *      eth0    10.19.0.0/25         0.0.0.0/0            to:203.0.113.1
+
+PS> kathara exec pc_dev1 -- ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=59 time=1.30 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=59 time=1.42 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=59 time=1.67 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=59 time=1.60 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 1.304/1.497/1.668/0.142 ms
+
+PS> kathara exec rcla -- iptables -t nat -L POSTROUTING -n -v
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DOCKER_POSTROUTING  0    --  *      *       0.0.0.0/0            127.0.0.11
+    2   168 SNAT       0    --  *      eth4    10.19.0.0/26         0.0.0.0/0            to:203.0.113.14
+    1    84 SNAT       0    --  *      eth4    10.19.0.128/25       0.0.0.0/0            to:203.0.113.14
+    0     0 SNAT       0    --  *      eth4    10.19.2.0/23         0.0.0.0/0            to:203.0.113.14

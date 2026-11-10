@@ -1,0 +1,24 @@
+Acceso HTTP entre clientes antes del traslado de B - 10/11/2026
+Registro historico: srvb aun tenia 203.0.113.10. Actualmente usa 203.0.113.26.
+
+root@pc_admin1:/# curl --max-time 5 -I http://203.0.113.10/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 16:34:31 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+
+root@pcb1:/# curl --max-time 5 -I http://203.0.113.34/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 16:34:56 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html

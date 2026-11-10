@@ -1,0 +1,45 @@
+Primeras pruebas de gateways y salida de A - 10/11/2026
+
+root@pc_admin1:/# ping -c 4 10.19.0.1
+PING 10.19.0.1 (10.19.0.1) 56(84) bytes of data.
+64 bytes from 10.19.0.1: icmp_seq=1 ttl=64 time=1.55 ms
+64 bytes from 10.19.0.1: icmp_seq=2 ttl=64 time=0.903 ms
+64 bytes from 10.19.0.1: icmp_seq=3 ttl=64 time=0.785 ms
+64 bytes from 10.19.0.1: icmp_seq=4 ttl=64 time=0.698 ms
+
+--- 10.19.0.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3041ms
+rtt min/avg/max/mdev = 0.698/0.983/1.546/0.333 ms
+
+root@pc_admin1:/# ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=59 time=2.05 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=59 time=1.75 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=59 time=1.50 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=59 time=1.30 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 1.297/1.649/2.045/0.279 ms
+
+root@pc_dev1:/# ping -c 4 10.19.0.129
+PING 10.19.0.129 (10.19.0.129) 56(84) bytes of data.
+64 bytes from 10.19.0.129: icmp_seq=1 ttl=64 time=1.62 ms
+64 bytes from 10.19.0.129: icmp_seq=2 ttl=64 time=0.915 ms
+64 bytes from 10.19.0.129: icmp_seq=3 ttl=64 time=0.631 ms
+64 bytes from 10.19.0.129: icmp_seq=4 ttl=64 time=0.648 ms
+
+--- 10.19.0.129 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3049ms
+rtt min/avg/max/mdev = 0.631/0.954/1.623/0.402 ms
+
+root@pc_dev1:/# ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=59 time=1.23 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=59 time=1.41 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=59 time=1.30 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=59 time=1.37 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 1.230/1.328/1.413/0.068 ms

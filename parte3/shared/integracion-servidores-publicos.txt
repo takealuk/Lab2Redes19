@@ -1,0 +1,69 @@
+Servidores publicos de A y B - 10/11/2026
+Se omiten las barras de progreso de curl; se conservan las cabeceras recibidas.
+La prueba de B usa su IP actual 203.0.113.26, posterior al traslado al /29.
+
+root@pcint:/# ping -c 4 203.0.113.34
+PING 203.0.113.34 (203.0.113.34) 56(84) bytes of data.
+64 bytes from 203.0.113.34: icmp_seq=1 ttl=60 time=2.27 ms
+64 bytes from 203.0.113.34: icmp_seq=2 ttl=60 time=1.16 ms
+64 bytes from 203.0.113.34: icmp_seq=3 ttl=60 time=1.29 ms
+64 bytes from 203.0.113.34: icmp_seq=4 ttl=60 time=1.29 ms
+
+--- 203.0.113.34 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 1.160/1.501/2.269/0.446 ms
+
+root@pcint:/# curl --max-time 5 -I http://203.0.113.34/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 16:31:11 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+
+root@pcint:/# ping -c 4 203.0.113.26
+PING 203.0.113.26 (203.0.113.26) 56(84) bytes of data.
+64 bytes from 203.0.113.26: icmp_seq=1 ttl=60 time=1.59 ms
+64 bytes from 203.0.113.26: icmp_seq=2 ttl=60 time=0.767 ms
+64 bytes from 203.0.113.26: icmp_seq=3 ttl=60 time=0.779 ms
+64 bytes from 203.0.113.26: icmp_seq=4 ttl=60 time=0.745 ms
+
+--- 203.0.113.26 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3058ms
+rtt min/avg/max/mdev = 0.745/0.969/1.586/0.356 ms
+
+root@pcint:/# curl --max-time 5 -I http://203.0.113.26/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 17:42:33 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+
+root@pc_admin1:/# curl --max-time 5 -I http://203.0.113.26/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 17:42:57 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html
+
+PS> kathara exec pcb1 -- curl --max-time 5 -I http://203.0.113.34/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 17:59:45 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html

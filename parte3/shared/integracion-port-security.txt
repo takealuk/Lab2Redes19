@@ -1,0 +1,59 @@
+Port security: MAC legitima, suplantacion y recuperacion - 10/11/2026
+Los comandos ip link e ip route add no imprimieron salida.
+
+PS> kathara exec pc_guest1 -- ping -c 3 10.19.2.1
+PING 10.19.2.1 (10.19.2.1) 56(84) bytes of data.
+64 bytes from 10.19.2.1: icmp_seq=1 ttl=64 time=1.82 ms
+64 bytes from 10.19.2.1: icmp_seq=2 ttl=64 time=0.718 ms
+64 bytes from 10.19.2.1: icmp_seq=3 ttl=64 time=0.734 ms
+
+--- 10.19.2.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2033ms
+rtt min/avg/max/mdev = 0.718/1.090/1.820/0.515 ms
+
+PS> kathara exec pc_guest1 -- ip link set eth0 down
+PS> kathara exec pc_guest1 -- ip link set eth0 address 02:00:00:00:00:0d
+PS> kathara exec pc_guest1 -- ip link set eth0 up
+PS> kathara exec pc_guest1 -- ping -c 3 -W 1 10.19.2.1
+PING 10.19.2.1 (10.19.2.1) 56(84) bytes of data.
+
+--- 10.19.2.1 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2038ms
+
+PS> kathara exec pc_guest1 -- ip link set eth0 down
+PS> kathara exec pc_guest1 -- ip link set eth0 address 02:00:00:00:00:0c
+PS> kathara exec pc_guest1 -- ip link set eth0 up
+PS> kathara exec pc_guest1 -- ping -c 3 10.19.2.1
+PING 10.19.2.1 (10.19.2.1) 56(84) bytes of data.
+64 bytes from 10.19.2.1: icmp_seq=1 ttl=64 time=1.22 ms
+64 bytes from 10.19.2.1: icmp_seq=2 ttl=64 time=1.27 ms
+64 bytes from 10.19.2.1: icmp_seq=3 ttl=64 time=0.919 ms
+
+--- 10.19.2.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 0.919/1.136/1.273/0.155 ms
+
+PS> kathara exec p4sw3 -- sh -c "echo 'counter_read MyIngress.ps_violations 0' | simple_switch_CLI"
+Obtaining JSON from switch...
+Done
+Control utility for runtime P4 table manipulation
+RuntimeCmd: MyIngress.ps_violations[0]= (180 bytes, 3 packets)
+RuntimeCmd:
+
+PS> kathara exec pc_guest1 -- ip route
+10.19.2.0/23 dev eth0 proto kernel scope link src 10.19.2.2
+
+Nota: al bajar la interfaz se perdio la ruta por defecto; se restauro antes
+de verificar nuevamente el acceso HTTP permitido.
+
+PS> kathara exec pc_guest1 -- ip route add default via 10.19.2.1
+PS> kathara exec pc_guest1 -- curl --max-time 5 -I http://203.0.113.34/
+HTTP/1.1 200 OK
+Date: Tue, 10 Nov 2026 17:58:08 GMT
+Server: Apache/2.4.66 (Debian)
+Last-Modified: Sun, 22 Mar 2026 19:58:09 GMT
+ETag: "29cd-64da256595640"
+Accept-Ranges: bytes
+Content-Length: 10701
+Vary: Accept-Encoding
+Content-Type: text/html

@@ -1,0 +1,32 @@
+Vecinos OSPF y rutas publicas - 10/11/2026
+
+PS> kathara exec r3 -- vtysh -c "show ip ospf neighbor"
+
+Neighbor ID     Pri State           Up Time         Dead Time Address         Interface                        RXmtL RqstL DBsmL
+1.1.1.1           1 Full/Backup     3m00s             39.579s 10.255.0.21     eth0:10.255.0.22                     0     0     0
+2.2.2.2           1 Full/Backup     2m50s             39.955s 10.255.0.29     eth1:10.255.0.30                     0     0     0
+5.5.5.5           1 Full/DR         3m00s             39.941s 10.255.0.34     eth2:10.255.0.33                     0     0     0
+
+PS> kathara exec r5 -- vtysh -c "show ip ospf neighbor"
+
+Neighbor ID     Pri State           Up Time         Dead Time Address         Interface                        RXmtL RqstL DBsmL
+2.2.2.2           1 Full/Backup     2m51s             38.471s 10.255.0.10     eth0:10.255.0.9                      0     0     0
+3.3.3.3           1 Full/Backup     3m01s             38.342s 10.255.0.33     eth1:10.255.0.34                     0     0     0
+4.4.4.4           1 Full/Backup     3m01s             38.079s 10.255.0.37     eth2:10.255.0.38                     0     0     0
+6.6.6.6           1 Full/DR         2m56s             38.458s 10.255.0.2      eth3:10.255.0.1                      0     0     0
+
+PS> kathara exec r3 -- vtysh -c "show ip route 203.0.113.24/29"
+Routing entry for 203.0.113.24/29
+  Known via "ospf", distance 110, metric 20, best
+  Last update 00:03:05 ago
+  Flags: Selected
+  Status: Installed
+  * 10.255.0.34, via eth2, weight 1
+
+PS> kathara exec r5 -- vtysh -c "show ip route 203.0.113.32/27"
+Routing entry for 203.0.113.32/27
+  Known via "ospf", distance 110, metric 20, best
+  Last update 00:03:06 ago
+  Flags: Selected
+  Status: Installed
+  * 10.255.0.33, via eth1, weight 1
