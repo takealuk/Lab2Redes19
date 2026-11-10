@@ -1029,26 +1029,94 @@ En `rint.startup` se agregó el retorno a `203.0.113.32/27` con dos nexthops de
 igual peso, vía r1 (`10.255.0.26`) y r6 (`10.255.0.5`), como para los otros
 prefijos públicos. rint continúa sin participar en OSPF.
 
+### Primeras pruebas de integración — 10/11/2026
+
+Se inició el laboratorio y se ejecutaron los siguientes comandos en las
+terminales de los dispositivos. Los resultados corresponden a las salidas de
+consola compartidas durante las pruebas; no se guardaron nuevas capturas pcap
+ni archivos de resultados para estas verificaciones.
+
+| Origen | Comando | Resultado observado |
+|---|---|---|
+| pc_admin1 | `ping -c 4 10.19.0.1` | Gateway de ADMIN: 4 respuestas, 0 % de pérdida. |
+| pc_admin1 | `ping -c 4 8.8.8.8` | Internet simulado: 4 respuestas, 0 % de pérdida. |
+| pc_dev1 | `ping -c 4 10.19.0.129` | Gateway de DESARROLLO: 4 respuestas, 0 % de pérdida. |
+| pc_dev1 | `ping -c 4 8.8.8.8` | Internet simulado: 4 respuestas, 0 % de pérdida. |
+| pcint | `ping -c 4 203.0.113.34` | Servidor público de A: 4 respuestas, 0 % de pérdida. |
+| pcint | `curl --max-time 5 -I http://203.0.113.34/` | HTTP de srv1: `200 OK`. |
+| pc_guest1 | `ping -c 4 10.19.2.1` | Gateway de INVITADOS: 4 respuestas, 0 % de pérdida. |
+| pc_guest1 | `curl --max-time 5 -I http://203.0.113.34/` | HTTP de srv1 permitido: `200 OK`. |
+| pc_guest1 | `curl -k --max-time 5 -I https://203.0.113.34/` | HTTPS de srv1 permitido: `200 OK`. |
+| pc_guest1 | `ping -c 4 10.19.0.2` | ADMIN: ninguna respuesta, 100 % de pérdida, conforme a la política. |
+| pc_guest1 | `ping -c 4 8.8.8.8` | Internet simulado: ninguna respuesta, 100 % de pérdida, conforme a la política. |
+| pc_admin1 | `curl --max-time 5 -I http://203.0.113.10/` | Acceso desde A al servidor público de B: `200 OK`. |
+| pcb1 | `curl --max-time 5 -I http://203.0.113.34/` | Acceso desde B al servidor público de A: `200 OK`. |
+
+En estos comandos, `ping -c 4` envía cuatro solicitudes ICMP. En curl,
+`-I` solicita las cabeceras HTTP y `--max-time 5` limita la prueba a cinco
+segundos; `-k` permite probar HTTPS con el certificado autofirmado de srv1.
+
+Las pruebas verifican acceso al gateway y salida a Internet simulado desde
+ADMIN y DESARROLLO, acceso externo al servidor público de A y acceso HTTP
+entre clientes mediante sus servidores públicos. Son consistentes con las
+rutas y reglas SNAT configuradas; queda pendiente observar la traducción
+directamente mediante contadores o captura de paquetes en este escenario.
+No se probó comunicación directa entre las PCs privadas de A y B.
+
+Los resultados de INVITADOS coinciden con los permisos y bloqueos ensayados:
+gateway y servicios web de srv1 accesibles, ping a ADMIN y pcint bloqueado.
+Esto no constituye todavía una repetición completa de las pruebas de 2.3 ni
+una prueba de suplantación de MAC para port security en la integración.
+
+### Ampliación de la LAN de B y pruebas — 10/11/2026
+
+Se agregaron pcb2 y pcb3 al dominio `LAN_B` en `lab.conf` y se crearon sus
+archivos de arranque. La LAN queda con tres PCs:
+
+| Host | Dirección | Gateway |
+|---|---|---|
+| pcb1 | `10.19.0.2/25` | `10.19.0.1` |
+| pcb2 | `10.19.0.3/25` | `10.19.0.1` |
+| pcb3 | `10.19.0.4/25` | `10.19.0.1` |
+
+No fue necesario modificar SNAT en rclb: la regla existente abarca toda la
+LAN `10.19.0.0/25`. Tras reiniciar el laboratorio, se ejecutaron estas pruebas:
+
+| Origen | Comando | Resultado observado |
+|---|---|---|
+| pcb2 | `ping -c 4 10.19.0.4` | Comunicación con pcb3: 4 respuestas, 0 % de pérdida. |
+| pcb2 | `ping -c 4 8.8.8.8` | Internet simulado: 4 respuestas, 0 % de pérdida. |
+| pcb3 | `ping -c 4 8.8.8.8` | Internet simulado: 4 respuestas, 0 % de pérdida. |
+
+Los resultados se registran a partir de las salidas de consola compartidas;
+no se guardaron nuevas capturas para estas pruebas.
+
+La ampliación de la red pública de servidores de B sigue pendiente. No se
+puede ampliar directamente `203.0.113.8/30` a `/29`, porque se superpondría
+con el enlace de A `203.0.113.12/30`. La propuesta para el siguiente paso es
+trasladar la DMZ de B a un `/29` libre, conservando una sola red de servidores
+y dejando capacidad para el servidor adicional. Esta propuesta todavía no
+se aplicó a los archivos de configuración.
+
 ### Estado y próximos pasos
 
-Este avance fue revisado en los archivos; **todavía no se ejecutaron pruebas de
-integración**. Los archivos que actualmente contiene `parte3/shared/` fueron
+La integración básica de A ya fue probada con los resultados anteriores.
+Los archivos que actualmente contiene `parte3/shared/` fueron
 heredados de la copia de 1.4 y no constituyen evidencia de la Parte 3; incluyen
 pruebas con pca1, dispositivo que ya no forma parte de este escenario.
 
 Queda pendiente:
 
-- Arrancar el escenario y verificar interfaces, arranque de P4, vecinos OSPF,
+- Guardar consultas explícitas de interfaces, tablas P4, vecinos OSPF,
   anuncio de la red de servidores y rutas de retorno.
-- Comprobar la comunicación interna de A, la salida de ADMIN y DESARROLLO a
-  pcint, NAT y el acceso externo a srv1. Revalidar las restricciones de
-  INVITADOS y port security en el escenario integrado.
-- Agregar pcb2 y pcb3 a la LAN de B, con direcciones distintas y gateway rclb.
+- Completar las pruebas internas de A, observar NAT directamente y ampliar
+  las comprobaciones de la política de INVITADOS. Repetir las pruebas de
+  suplantación de MAC de port security en el escenario integrado.
 - Revisar la subred pública de servidores de B para admitir un servidor web
   adicional: el `/30` actual solo tiene espacio para rclb y srvb. Actualizar las
   rutas y anuncios que correspondan a la ampliación elegida.
-- Verificar conectividad entre clientes mediante los servicios públicos,
-  conectividad con la LAN de r8 y el funcionamiento conjunto del ISP.
+- Revalidar el acceso entre clientes mediante los servicios públicos tras
+  ampliar B y comprobar la conectividad con la LAN de r8.
 - Guardar capturas y resultados propios de integración y documentarlos.
 
 La LAN de r8 conserva por ahora `203.0.113.16/29`, con pcc1 en
