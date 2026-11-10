@@ -1091,12 +1091,45 @@ LAN `10.19.0.0/25`. Tras reiniciar el laboratorio, se ejecutaron estas pruebas:
 Los resultados se registran a partir de las salidas de consola compartidas;
 no se guardaron nuevas capturas para estas pruebas.
 
-La ampliación de la red pública de servidores de B sigue pendiente. No se
-puede ampliar directamente `203.0.113.8/30` a `/29`, porque se superpondría
-con el enlace de A `203.0.113.12/30`. La propuesta para el siguiente paso es
-trasladar la DMZ de B a un `/29` libre, conservando una sola red de servidores
-y dejando capacidad para el servidor adicional. Esta propuesta todavía no
-se aplicó a los archivos de configuración.
+### Traslado y ampliación de la red pública de B — 10/11/2026
+
+La red original `203.0.113.8/30` solo admitía el gateway y srvb. Ampliarla
+directamente a `/29` se superpondría con el enlace de A `203.0.113.12/30`.
+Se trasladó la DMZ de B al bloque libre `203.0.113.24/29`, conservando una
+sola red de servidores sin agregar interfaces ni renumerar las otras redes.
+
+| Elemento | Configuración actual |
+|---|---|
+| Red pública de servidores de B | `203.0.113.24/29` |
+| Gateway rclb, eth2 | `203.0.113.25/29` |
+| srvb, eth0 | `203.0.113.26/29`, gateway `203.0.113.25` |
+| Direcciones disponibles | `203.0.113.27` a `203.0.113.30` |
+| Broadcast | `203.0.113.31` |
+
+El bloque tiene seis direcciones utilizables: una para el gateway y hasta cinco
+para servidores. Queda capacidad para el servidor web adicional previsto por
+la letra; todavía no se agregó un segundo servidor a la emulación.
+La IP de NAT de B sigue siendo `203.0.113.1/32`, sin cambios en la LAN privada.
+
+Además de actualizar `rclb.startup` y `srvb.startup`, se reemplazó la ruta del
+prefijo antiguo en `r5/etc/frr/frr.conf` por
+`ip route 203.0.113.24/29 203.0.113.6`. El `redistribute static` existente
+anuncia el nuevo prefijo por OSPF. En `rint.startup` se actualizó el retorno
+a `203.0.113.24/29`, conservando ambos nexthops vía r1 y r6.
+Estos cambios se aplicaron únicamente en `parte3/`.
+
+Después de reiniciar el escenario se obtuvieron los siguientes resultados:
+
+| Origen | Comando | Resultado observado |
+|---|---|---|
+| pcint | `ping -c 4 203.0.113.26` | 4 respuestas, 0 % de pérdida. |
+| pcint | `curl --max-time 5 -I http://203.0.113.26/` | HTTP de srvb desde Internet simulado: `200 OK`. |
+| pc_admin1 | `curl --max-time 5 -I http://203.0.113.26/` | HTTP de srvb desde A: `200 OK`. |
+
+Las salidas de consola confirman el acceso al servidor después del traslado;
+no se guardaron nuevas capturas pcap para estas pruebas. Los resultados
+anteriores dirigidos a `203.0.113.10` corresponden a la numeración previa y
+se conservan como registro histórico, no como comandos para el estado actual.
 
 ### Estado y próximos pasos
 
@@ -1112,11 +1145,8 @@ Queda pendiente:
 - Completar las pruebas internas de A, observar NAT directamente y ampliar
   las comprobaciones de la política de INVITADOS. Repetir las pruebas de
   suplantación de MAC de port security en el escenario integrado.
-- Revisar la subred pública de servidores de B para admitir un servidor web
-  adicional: el `/30` actual solo tiene espacio para rclb y srvb. Actualizar las
-  rutas y anuncios que correspondan a la ampliación elegida.
-- Revalidar el acceso entre clientes mediante los servicios públicos tras
-  ampliar B y comprobar la conectividad con la LAN de r8.
+- Completar las comprobaciones de conectividad tras ampliar B, incluido el
+  sentido B hacia el servidor de A, y comprobar la conectividad con la LAN de r8.
 - Guardar capturas y resultados propios de integración y documentarlos.
 
 La LAN de r8 conserva por ahora `203.0.113.16/29`, con pcc1 en
