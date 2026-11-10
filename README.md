@@ -1131,23 +1131,47 @@ no se guardaron nuevas capturas pcap para estas pruebas. Los resultados
 anteriores dirigidos a `203.0.113.10` corresponden a la numeración previa y
 se conservan como registro histórico, no como comandos para el estado actual.
 
+### Archivos de resultados de integración — 10/11/2026
+
+Se guardaron en `parte3/shared/` transcripciones de los comandos y las salidas
+compartidas por Luca. No son nuevas ejecuciones ni capturas pcap. Se quitaron
+los caracteres de control y el texto intercalado al pegar comandos; en curl
+se omite la barra de progreso y se conservan las cabeceras recibidas.
+Los prefijos `PS>` identifican comandos ejecutados desde PowerShell mediante
+Kathará; `root@dispositivo:/#` identifica comandos en la terminal del dispositivo.
+
+| Archivo | Contenido |
+|---|---|
+| `integracion-arranque-a.txt` | Gateways de ADMIN y DESARROLLO y primeras pruebas de salida a pcint. |
+| `integracion-interna-a.txt` | ADMIN hacia otro host de ADMIN, DESARROLLO y srv1; las tres pruebas con 4/4 respuestas. |
+| `integracion-lan-b.txt` | pcb2 hacia pcb3 y salida de pcb2 y pcb3 a pcint, sin pérdida. |
+| `integracion-invitados.txt` | Gateway, HTTP y HTTPS permitidos; ping a ADMIN y pcint bloqueado. |
+| `integracion-servidores-publicos.txt` | Acceso externo a ambos servidores, A hacia srvb en su IP actual y B hacia srv1 después de los cambios. |
+| `integracion-http-previo-traslado-b.txt` | Registro histórico de HTTP entre clientes antes del traslado de srvb al nuevo /29. |
+| `integracion-nat.txt` | Pings de ADMIN, DESARROLLO y B a pcint y contadores SNAT de rcla y rclb. |
+| `integracion-ospf.txt` | Vecinos de r3 y r5 en Full y rutas OSPF instaladas hacia las redes públicas del otro cliente. |
+| `integracion-lan-r8.txt` | ADMIN hacia pcc1, pcint hacia pcc1 y pcc1 hacia pcint, sin pérdida. |
+| `integracion-port-security.txt` | MAC legítima con 3/3 respuestas, MAC de guest2 con 0/3 y recuperación con 3/3; contador de tres violaciones. Incluye restauración de la ruta por defecto y HTTP 200 posterior. |
+
+Las consultas de NAT muestran tráfico en las reglas de ADMIN, DESARROLLO y B.
+La regla de INVITADOS permanece en cero en la salida compartida. Son evidencias
+de los contadores de las reglas; no se agregó una captura de paquetes traducidos.
+En la prueba de port security se perdió la ruta por defecto de guest1 al bajar
+su interfaz. Se restauró en ejecución; su startup ya la configura al arrancar.
+
+Se retiraron de `parte3/shared/` las copias heredadas de 1.4, que no eran
+evidencia de integración e incluían referencias a pca1, ya retirado de parte3.
+Los resultados originales de esa etapa siguen en `parte1_4/shared/`.
+
 ### Estado y próximos pasos
 
-La integración básica de A ya fue probada con los resultados anteriores.
-Los archivos que actualmente contiene `parte3/shared/` fueron
-heredados de la copia de 1.4 y no constituyen evidencia de la Parte 3; incluyen
-pruebas con pca1, dispositivo que ya no forma parte de este escenario.
-
-Queda pendiente:
-
-- Guardar consultas explícitas de interfaces, tablas P4, vecinos OSPF,
-  anuncio de la red de servidores y rutas de retorno.
-- Completar las pruebas internas de A, observar NAT directamente y ampliar
-  las comprobaciones de la política de INVITADOS. Repetir las pruebas de
-  suplantación de MAC de port security en el escenario integrado.
-- Completar las comprobaciones de conectividad tras ampliar B, incluido el
-  sentido B hacia el servidor de A, y comprobar la conectividad con la LAN de r8.
-- Guardar capturas y resultados propios de integración y documentarlos.
+Se completó la serie de pruebas funcionales documentada: comunicación interna,
+salida a Internet, servicios públicos entre clientes, restricciones ensayadas de
+INVITADOS, contadores NAT, consultas OSPF, LAN de r8 y port security.
+Las consultas de vecinos cubren r3 y r5; no constituyen una consulta de todos
+los routers ni una repetición de las pruebas de fallas de la Parte 1.
+Quedan la redacción del informe y, si se requieren, evidencias adicionales
+de interfaces, tablas P4 o capturas específicas de integración.
 
 La LAN de r8 conserva por ahora `203.0.113.16/29`, con pcc1 en
 `203.0.113.18/29` y sin NAT. Se consultará al profesor si debe convertirse en
