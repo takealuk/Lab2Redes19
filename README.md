@@ -5,10 +5,17 @@ Cada carpeta es un laboratorio Kathará independiente:
 
 | Carpeta | Contenido | Partes |
 |---|---|---|
-| `parte1/` | Escenario estático de RíoNet, con NAT de B y servidor público | 1.1 |
-| `parte1_2/` | Copia de `parte1/` con OSPF habilitado en los enlaces internos de r1–r6; trabajo en curso | 1.2 |
-| `parte1_4/` | Igual a `parte1/` más los routers r7 y r8, **sin enlaces ni direccionamiento** | 1.4 |
-| `parte2/` | LAN del Cliente A con los switches P4 | 2.1 – 2.4 |
+| `parte1/` | Escenario estático de RíoNet, con NAT de A y B y servidor público de B | 1.1 |
+| `parte1_2/` | Backbone OSPF, anuncios públicos de los clientes y retorno multipath en rint | 1.2 |
+| `parte1_3/` | Resultados de las pruebas de convergencia; no es un laboratorio independiente | 1.3 |
+| `parte1_4/` | Expansión del ISP con r7, r8 y una LAN nueva | 1.4 |
+| `parte1_5/` | Ingeniería de caminos mediante costos OSPF | 1.5 |
+| `parte2/` | Numeración de las cuatro redes del Cliente A; switches P4 base | 2.1 |
+| `parte2_1/` | Escenario auxiliar y evidencia de ARP/Ethernet | 2.1 |
+| `parte2_2/` | Reenvío Ethernet en P4 y reflexión sobre el cuarto host | 2.2 |
+| `parte2_3/` | Política de acceso de INVITADOS, scripts y evidencias | 2.3 |
+| `parte2_4/` | Política de acceso más port security, scripts y evidencias | 2.4 |
+| `parte3/` | ISP ampliado y red de A con P4 integrados; pendiente validar y ampliar B | 3 |
 
 La Parte 3 (integración) se construye como un laboratorio nuevo a partir de los anteriores.
 
@@ -875,7 +882,7 @@ dominios de broadcast y colisión e incorporar el análisis de la captura al inf
 
 **srv1** inicia Apache con HTTP (80) y HTTPS (443, certificado autofirmado).
 
-### Switches P4
+### Switches P4 base de `parte2/` y `parte2_1/`
 
 Cada `p4swN/` contiene:
 - `switch.p4`: **esqueleto** del programa. Define el encabezado Ethernet, el
@@ -899,3 +906,154 @@ simple_switch_CLI                  # CLI interactiva (help, table_dump, counter_
 ```
 
 Para aplicar cambios en `switch.p4` o `commands.txt`: `kathara lrestart`.
+
+### Parte 2.2 – Reenvío Ethernet en P4
+
+Catalina incorporó el escenario independiente `parte2_2/`. Los cuatro switches
+implementan una tabla estática `mac_table` que asocia la MAC de destino con un
+puerto de salida. Las MAC y los puertos se cargan desde `commands.txt`.
+El destino broadcast se replica mediante el grupo multicast 1; en egress se
+descarta la copia destinada al mismo puerto por el que ingresó la trama.
+Los destinos desconocidos se descartan por defecto: no hay aprendizaje automático
+de MAC ni flooding de unicast desconocido.
+
+Se agregaron contadores de paquetes y bytes por puerto de entrada y de salida.
+Para la reflexión sobre `pc_admin4`, su MAC no figura en la tabla inicial de
+`p4sw1`, aunque su puerto participa del grupo broadcast. Por ello, recibir un
+broadcast no implica que el switch pueda reenviarle un unicast dirigido a su MAC.
+
+Evidencias en `parte2_2/shared/`:
+
+| Archivo | Contenido |
+|---|---|
+| `contadores.sh` | Consulta los contadores ingress/egress; se ejecuta dentro del switch con `bash /shared/contadores.sh 5` para sus cinco puertos. |
+| `contadores-antes.txt`, `contadores-despues.txt` | Lecturas guardadas para comparar el tráfico por puerto. |
+| `reflexion-admin4.pcap` | Captura guardada para analizar la incorporación del cuarto host sin modificar la tabla MAC. |
+
+### Parte 2.3 – Política de acceso de INVITADOS
+
+Olivia creó `parte2_3/` a partir del reenvío Ethernet. El parser incorpora IPv4 y
+TCP. En `p4sw3`, los puertos de los invitados se marcan como restringidos y se
+aplica una lista de permisos antes de consultar la tabla MAC:
+
+- ARP permitido.
+- Tráfico IPv4 al gateway `10.19.2.1` permitido.
+- TCP a `srv1` (`203.0.113.34`) permitido únicamente para los puertos 80 y 443.
+- El resto del tráfico que ingresa por esos puertos se descarta.
+
+La política se basa en el puerto de entrada y los campos del paquete; no mantiene
+estado de conexiones. Se agregaron los contadores `acl_allowed` y `acl_denied`.
+Los otros switches conservan el reenvío sin marcar sus puertos como restringidos.
+
+Evidencias y scripts en `parte2_3/shared/`:
+
+| Archivos | Contenido |
+|---|---|
+| `guest1-permitidos.sh`, `2_3-ok-*.txt` | Ping al gateway y consultas HTTP/HTTPS a srv1. Los resultados guardados muestran ping exitoso y código HTTP `200` en ambos servicios. |
+| `guest1-bloqueados.sh`, `2_3-bloq-*.txt` | Intentos de ping a srv1, ADMIN y otro invitado, y conexión TCP al puerto 8080. Los pings no reciben respuestas y curl no obtiene respuesta HTTP (`000`). |
+| `admin1-control.sh`, `2_3-control-*.txt` | Pruebas de control desde ADMIN hacia srv1. |
+| `admin1-stateless.sh`, `2_3-stateless-admin-a-guest.txt` | Prueba desde ADMIN hacia un invitado: el ping falla, consistente con el bloqueo de las respuestas que ingresan desde el puerto restringido. |
+| `contadores.sh`, `p4sw3-contadores.sh`, `contadores-0-inicio.txt` a `contadores-3-final.txt` | Consultas y lecturas de los contadores antes y después de las pruebas. La lectura final registra 38 paquetes permitidos y 16 denegados por la ACL. |
+| `p4sw3-verificar.sh` | Consulta la configuración del switch. |
+| `p4sw3-capturas-iniciar.sh`, `p4sw3-capturas-detener.sh` | Inician y detienen las capturas en el switch. |
+| `2_3-entrada-guest1.pcap`, `2_3-salida-rcla.pcap` | Capturas del enlace con guest1 y del enlace hacia rcla para comparar el tráfico antes y después del filtrado. |
+
+Los scripts destinados a un host se ejecutan en su terminal, por ejemplo
+`bash /shared/guest1-permitidos.sh` en `pc_guest1`. En HTTPS se utiliza un
+certificado autofirmado; el script emplea `curl -k` para realizar esa prueba.
+
+### Parte 2.4 – Port security
+
+Olivia agregó `parte2_4/`, que conserva la política de 2.3 e incorpora en los
+cuatro switches una tabla `port_security`. Cada entrada autoriza una combinación
+de puerto de ingreso y MAC de origen. Las combinaciones no autorizadas se
+descartan antes de aplicar la política de INVITADOS y el reenvío Ethernet.
+Las entradas se cargan desde `commands.txt`; en este escenario también se incluye
+la MAC de `pc_admin4` en las tablas de reenvío y de port security.
+
+Evidencias y scripts en `parte2_4/shared/`:
+
+| Archivos | Contenido |
+|---|---|
+| `guest1-ps-correcto.sh`, `2_4-correcto.txt` | Prueba con la MAC legítima de guest1: tres respuestas al ping al gateway, sin pérdida. |
+| `guest1-ps-suplantar-admin1.sh`, `2_4-suplantacion-admin1.txt` | Cambia temporalmente la MAC de guest1 por la de admin1 y prueba el gateway. Los tres pings fallan; al restaurar la MAC, la conectividad se recupera. |
+| `guest1-ps-suplantar-guest2.sh`, `2_4-suplantacion-guest2.txt` | Repite la prueba usando la MAC de otro invitado, autorizado en un puerto diferente. También se bloquea y se recupera al restaurar la MAC. |
+| `contadores.sh`, `p4sw3-contadores.sh`, `contadores-0-inicio.txt` a `contadores-3-tras-suplantar-guest2.txt` | Lecturas por puerto, ACL y violaciones de port security. La lectura final registra seis paquetes en `ps_violations`. |
+| `p4sw3-verificar.sh` | Consulta las tablas configuradas. |
+| `p4sw3-capturas-iniciar.sh`, `p4sw3-capturas-detener.sh` | Control de las capturas. |
+| `2_4-entrada-guest1.pcap`, `2_4-salida-rcla.pcap` | Capturas para contrastar el tráfico recibido del host con el reenviado hacia el router. |
+
+Los scripts de suplantación se ejecutan en `pc_guest1` y restauran su MAC
+original al terminar. Las pruebas registradas corresponden a cambios de MAC de
+origen; la tabla no implementa una validación de identidad basada en la IP.
+
+Esta actualización resume el código y los resultados incorporados al repositorio
+por Catalina y Olivia. No implica una nueva ejecución de los tres escenarios.
+El direccionamiento de DESARROLLO se conserva en `10.19.0.128/25` en estas copias.
+
+## Parte 3 – Integración: avance de configuración
+
+La integración queda a cargo de Luca. Se creó `parte3/` copiando `parte1_4/`
+para conservar el ISP ampliado con r7, r8 y la LAN de pcc1. Se cambió la
+identificación del laboratorio a `redes-ob2-parte3`.
+
+### Incorporación del Cliente A
+
+Se reemplazó la LAN simple de pca1 por la red de `parte2_4/`: cuatro switches
+P4, cuatro PCs de ADMIN, tres de DESARROLLO, tres de INVITADOS y srv1.
+Se copiaron los programas `switch.p4`, las tablas `commands.txt` y los archivos
+de arranque de switches y hosts. Se conservan las MAC configuradas, el reenvío
+Ethernet, la política de INVITADOS y port security. Se retiraron pca1 y su startup.
+
+Las interfaces de rcla quedan así:
+
+| Interfaz | Conexión | Dirección |
+|---|---|---|
+| eth0 | ADMIN, por p4sw1 | `10.19.0.1/26` |
+| eth1 | DESARROLLO, por p4sw2 | `10.19.0.129/25` |
+| eth2 | INVITADOS, por p4sw3 | `10.19.2.1/23` |
+| eth3 | SERVIDORES, por p4sw4 | `203.0.113.33/27` |
+| eth4 | ISP, hacia r3 | `203.0.113.14/30` |
+
+En `rcla.startup` se conserva la salida por defecto hacia r3 (`203.0.113.13`).
+Se reemplazó la regla de NAT de la antigua LAN `192.168.100.0/24` por tres
+reglas SNAT, una para cada subred privada de A, con salida por eth4 y traducción
+a `203.0.113.14`. La red pública de SERVIDORES no se traduce. La regla de NAT de
+INVITADOS no elimina las restricciones aplicadas previamente por el switch P4.
+
+Para alcanzar srv1 desde el ISP se agregó en `r3/etc/frr/frr.conf` la ruta
+`ip route 203.0.113.32/27 203.0.113.14` y `redistribute static` dentro de OSPF.
+Así, r3 entrega los paquetes de esa red a rcla y anuncia el prefijo al backbone.
+El anuncio pasivo del enlace público `203.0.113.12/30` se conserva.
+En `rint.startup` se agregó el retorno a `203.0.113.32/27` con dos nexthops de
+igual peso, vía r1 (`10.255.0.26`) y r6 (`10.255.0.5`), como para los otros
+prefijos públicos. rint continúa sin participar en OSPF.
+
+### Estado y próximos pasos
+
+Este avance fue revisado en los archivos; **todavía no se ejecutaron pruebas de
+integración**. Los archivos que actualmente contiene `parte3/shared/` fueron
+heredados de la copia de 1.4 y no constituyen evidencia de la Parte 3; incluyen
+pruebas con pca1, dispositivo que ya no forma parte de este escenario.
+
+Queda pendiente:
+
+- Arrancar el escenario y verificar interfaces, arranque de P4, vecinos OSPF,
+  anuncio de la red de servidores y rutas de retorno.
+- Comprobar la comunicación interna de A, la salida de ADMIN y DESARROLLO a
+  pcint, NAT y el acceso externo a srv1. Revalidar las restricciones de
+  INVITADOS y port security en el escenario integrado.
+- Agregar pcb2 y pcb3 a la LAN de B, con direcciones distintas y gateway rclb.
+- Revisar la subred pública de servidores de B para admitir un servidor web
+  adicional: el `/30` actual solo tiene espacio para rclb y srvb. Actualizar las
+  rutas y anuncios que correspondan a la ampliación elegida.
+- Verificar conectividad entre clientes mediante los servicios públicos,
+  conectividad con la LAN de r8 y el funcionamiento conjunto del ISP.
+- Guardar capturas y resultados propios de integración y documentarlos.
+
+La LAN de r8 conserva por ahora `203.0.113.16/29`, con pcc1 en
+`203.0.113.18/29` y sin NAT. Se consultará al profesor si debe convertirse en
+una LAN privada con NAT; no se cambió ese diseño en este avance.
+Las redes privadas de A y B conservan el solapamiento ya documentado: las
+pruebas de acceso entre clientes deben distinguir los servicios públicos de
+la comunicación directa entre direcciones privadas.

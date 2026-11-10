@@ -1,0 +1,8 @@
+# IP publica del servidor web de B:
+ip addr add 203.0.113.10/30 dev eth0
+
+# Para alcanzar otras redes, enviar el gateway rclb:
+ip route add default via 203.0.113.9
+
+# Servidor web (HTTP). El direccionamiento debe ser configurado por el grupo.
+service apache2 start

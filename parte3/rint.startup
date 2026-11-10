@@ -1,0 +1,33 @@
+# IP de rint en el enlace hacia r6:
+ip addr add 10.255.0.6/30 dev eth2
+
+# IP de rint en el enlace hacia r1:
+ip addr add 10.255.0.25/30 dev eth1
+
+# IP de rint en la red de Internet simulado:
+ip addr add 8.8.8.1/24 dev eth0
+
+# Retorno hacia NAT de B por r1 y r6:
+ip route add 203.0.113.1/32 \
+    nexthop via 10.255.0.26 \
+    nexthop via 10.255.0.5
+
+# Retorno hacia el servidor publico de B por r1 y r6:
+ip route add 203.0.113.8/30 \
+    nexthop via 10.255.0.26 \
+    nexthop via 10.255.0.5
+
+# Retorno hacia la red publica de A por r1 y r6:
+ip route add 203.0.113.12/30 \
+    nexthop via 10.255.0.26 \
+    nexthop via 10.255.0.5
+
+# Retorno hacia el cliente nuevo por r1 y r6:
+ip route add 203.0.113.16/29 \
+    nexthop via 10.255.0.26 \
+    nexthop via 10.255.0.5
+
+# Retorno hacia los servidores publicos de A por r1 y r6:
+ip route add 203.0.113.32/27 \
+    nexthop via 10.255.0.26 \
+    nexthop via 10.255.0.5
