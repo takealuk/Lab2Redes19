@@ -1,0 +1,71 @@
+Validacion del Cliente C con NAT - 13/11/2026
+Este archivo resume las salidas; no es una transcripcion completa de terminal.
+
+Direccionamiento y reenvio:
+- pcc1: eth0 192.168.101.10/24; default via 192.168.101.1.
+- rclc: eth0 203.0.113.18/30; eth1 192.168.101.1/24;
+  default via 203.0.113.17; net.ipv4.ip_forward = 1.
+
+Comandos y resultados:
+kathara exec pcc1 -- ping -c 4 192.168.101.1
+4 transmitted, 4 received, 0% packet loss.
+kathara exec rclc -- ping -c 4 203.0.113.17
+4 transmitted, 4 received, 0% packet loss.
+
+kathara exec r8 -- vtysh -c "show ip ospf neighbor"
+6.6.6.6 Full/Backup, 10.255.0.49, eth0.
+7.7.7.7 Full/Backup, 10.255.0.53, eth1.
+kathara exec r1 -- vtysh -c "show ip route 203.0.113.16/30"
+Known via ospf, distance 110, metric 50, installed.
+Next hops: 10.255.0.17 via eth1; 10.255.0.22 via eth2; weight 1.
+kathara exec r8 -- ip route show default
+Via 10.255.0.49 dev eth0 proto ospf metric 20.
+kathara exec rint -- ip route show 203.0.113.16/30
+Next hops: 10.255.0.26 dev eth1; 10.255.0.5 dev eth2; weight 1.
+
+kathara exec rclc -- iptables -t nat -L POSTROUTING -n -v
+SNAT: source 192.168.101.0/24, out eth0, to:203.0.113.18.
+Antes del ping: 0 packets, 0 bytes.
+kathara exec pcc1 -- ping -c 4 8.8.8.8
+4 transmitted, 4 received, 0% packet loss; TTL 60.
+Contador SNAT despues: 1 packet, 84 bytes.
+
+kathara exec pcint -- ping -c 4 203.0.113.18
+4 transmitted, 4 received, 0% packet loss.
+kathara exec pc_admin1 -- ping -c 4 203.0.113.18
+4 transmitted, 4 received, 0% packet loss.
+Estos destinos identifican a rclc, no a pcc1.
+kathara exec pcint -- ping -c 4 192.168.101.10
+4 transmitted, 0 received, +4 errors, 100% packet loss.
+From 8.8.8.1: Destination Net Unreachable.
+
+kathara exec pcc1 -- curl -I --connect-timeout 5 http://203.0.113.26
+HTTP/1.1 200 OK (servidor B).
+kathara exec srv1 -- ip -4 addr show
+eth0: 203.0.113.34/27.
+kathara exec pcc1 -- curl -I --connect-timeout 5 http://203.0.113.34
+HTTP/1.1 200 OK (servidor A).
+
+Redundancia:
+kathara exec r8 -- ip link set eth0 down
+kathara exec pcc1 -- ping -c 4 8.8.8.8
+4 transmitted, 4 received, 0% packet loss; TTL 58.
+kathara exec pcc1 -- traceroute -I -n 8.8.8.8
+Saltos observados:
+1 192.168.101.1
+2 203.0.113.17
+3 10.255.0.53
+4 10.255.0.45
+5 10.255.0.42
+6 10.255.0.6
+7 8.8.8.8
+Recorrido: pcc1 -> rclc -> r8 -> r7 -> r4 -> r6 -> rint -> pcint.
+No se midio el tiempo de convergencia.
+
+Restauracion:
+kathara exec r8 -- ip link set eth0 up
+kathara exec r8 -- vtysh -c "show ip ospf neighbor"
+7.7.7.7 Full/Backup, 10.255.0.53, eth1.
+6.6.6.6 Full/DR, 10.255.0.49, eth0.
+kathara exec pcc1 -- ping -c 4 8.8.8.8
+4 transmitted, 4 received, 0% packet loss; TTL 60.
