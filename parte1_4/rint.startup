@@ -22,7 +22,7 @@ ip route add 203.0.113.12/30 \
     nexthop via 10.255.0.26 \
     nexthop via 10.255.0.5
 
-# Retorno hacia el cliente nuevo por r1 y r6:
-ip route add 203.0.113.16/29 \
+# Retorno hacia el cliente C por r1 y r6:
+ip route add 203.0.113.16/30 \
     nexthop via 10.255.0.26 \
     nexthop via 10.255.0.5

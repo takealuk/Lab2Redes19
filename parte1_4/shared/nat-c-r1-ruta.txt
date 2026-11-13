@@ -1,6 +1,6 @@
-Routing entry for 203.0.113.16/29
+Routing entry for 203.0.113.16/30
   Known via "ospf", distance 110, metric 50, best
-  Last update 00:04:08 ago
+  Last update 00:00:10 ago
   Flags: Selected 
   Status: Installed 
   * 10.255.0.17, via eth1, weight 1
