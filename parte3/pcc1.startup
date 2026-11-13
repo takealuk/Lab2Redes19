@@ -1,5 +1,5 @@
-# IP de la PC en la LAN del cliente nuevo (conectada a r8):
-ip addr add 203.0.113.18/29 dev eth0
+# IP de la PC en la LAN privada del cliente C:
+ip addr add 192.168.101.10/24 dev eth0
 
-# Para salir de la LAN a traves de r8:
-ip route add default via 203.0.113.17
+# Para salir de la LAN a traves de rclc:
+ip route add default via 192.168.101.1
