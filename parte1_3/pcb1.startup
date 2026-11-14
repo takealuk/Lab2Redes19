@@ -1,0 +1,5 @@
+# IP de la PC en la LAN privada de B:
+ip addr add 10.19.0.2/25 dev eth0
+
+# Para salir de la LAN a traves de rclb:
+ip route add default via 10.19.0.1

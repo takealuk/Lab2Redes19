@@ -7,7 +7,7 @@ Cada carpeta es un laboratorio Kathará independiente:
 |---|---|---|
 | `parte1_1/` | Escenario estático de RíoNet, con NAT de A y B y servidor público de B | 1.1 |
 | `parte1_2/` | Backbone OSPF, anuncios públicos de los clientes y retorno multipath en rint | 1.2 |
-| `parte1_3/` | Resultados de las pruebas de convergencia; no es un laboratorio independiente | 1.3 |
+| `parte1_3/` | Copia de la configuración de `parte1_2/` y resultados de las pruebas de convergencia | 1.3 |
 | `parte1_4/` | Expansión del ISP con r7, r8 y una LAN nueva | 1.4 |
 | `parte1_5/` | Ingeniería de caminos mediante costos OSPF | 1.5 |
 | `parte2/` | Numeración de las cuatro redes del Cliente A; switches P4 base | 2.1 |
@@ -218,6 +218,28 @@ y después de NAT en ambos sentidos, con identificador 4 y secuencias 1–4.
 
 La captura se detuvo desde otra consola con
 `kathara exec rcla -- pkill -INT -x tcpdump`; el archivo quedó completo.
+
+### Evidencia de alcance de srvB desde pcint
+
+La captura [srvb-desde-pcint.pcap](parte1_1/shared/srvb-desde-pcint.pcap)
+se realizó el 13/11/2026 en `srvb`, sobre su interfaz eth0, con
+`tcpdump -ni eth0 -w /shared/srvb-desde-pcint.pcap`, mientras se ejecutaba
+`ping 203.0.113.10` desde `pcint`. La captura se detuvo con
+`kathara exec srvb -- pkill -INT -x tcpdump`.
+
+Contiene tres intercambios ICMP completos (identificador 23912, secuencias 1–3):
+
+| Mensaje | Origen | Destino | TTL al llegar a srvb |
+|---|---|---|---|
+| Echo Request | `8.8.8.8` | `203.0.113.10` | 60 |
+| Echo Reply | `203.0.113.10` | `8.8.8.8` | 64 (creado por srvb) |
+
+Las direcciones no cambian en ningún momento: srvB tiene IP pública y la regla
+SNAT de rclb solo afecta a la LAN privada `10.19.0.0/25`. El TTL 60 de las
+solicitudes corresponde a los cuatro routers del camino
+`pcint → rint → r6 → r5 → rclb → srvb`. Las respuestas salen de srvb hacia su
+gateway, rclb (`203.0.113.9`). La captura demuestra el requisito de 1.1:
+srvB es alcanzable desde pcint.
 
 ### Pruebas
 
@@ -520,6 +542,34 @@ desde `parte1_2/`. La captura de NAT de 1.1 se conserva únicamente en
 `parte1_1/shared/nat-b.pcap` y `parte1_1/shared/nat-a.pcap`; las evidencias OSPF
 de 1.2 están en `parte1_2/shared/`.
 
+### Parte 1.3 – `parte1_3/`
+`parte1_3/` es un laboratorio propio: contiene una copia idéntica de la
+configuración actual de `parte1_2/` (`lab.conf`, `.startup` y `rN/etc/frr/`),
+sin la carpeta `shared/` de 1.2. Se ejecuta con `kathara lstart` desde
+`parte1_3/`; Kathará ignora las carpetas `repeticionN`, que no son equipos.
+
+Los resultados de las cinco repeticiones del 23/10/2026 se conservan sin
+cambios en `repeticion1/` a `repeticion5/`: ping de r1 a `10.255.0.41` cada
+10 ms, hora de la falla del enlace r2–r4, tablas de r1 antes y después y
+capturas de los enlaces r1–r2 y r4–r5. Esas pruebas se hicieron con la
+versión de `parte1_2/` anterior al retorno multipath de rint (04/11/2026);
+el único archivo que difiere es `rint.startup`, que no participa del camino
+r1–r4.
+
+**Verificación del 13/11/2026.** Con la configuración actual se repitió la
+prueba tres veces, solo para comparar (los resultados no se guardaron en el
+repositorio). Coincidieron con las repeticiones guardadas: tablas de r1 antes
+y después iguales, un único cambio de TTL de 63 a 62, una respuesta perdida,
+un ICMP Redirect desde `10.255.0.17` y un hueco de 22,3–23,3 ms. Las
+repeticiones guardadas no necesitan rehacerse.
+
+Única diferencia observada: tras la falla, r1 tiene dos caminos de igual
+costo hacia r4 (por r2 o por r3). En las repeticiones guardadas el ping siguió
+por r2; en la verificación, por r3. Por eso la cantidad de paquetes de
+`enlace-r1-r2.pcap` varía. Una prueba de control con el `rint.startup`
+anterior también eligió r3, por lo que la diferencia no se debe al cambio de
+configuración sino a la selección ECMP del kernel en cada entorno.
+
 ### Parte 1.4 – `parte1_4/`
 El escenario ya incorpora r7/r8, sus enlaces y la LAN del cliente nuevo
 `203.0.113.16/29`, con gateway r8 `203.0.113.17` y pcc1 `203.0.113.18`.
@@ -577,7 +627,7 @@ las defaults de r1/r6 hacia rint no deben sustituirlas para estos destinos.
 
 **Alcance:** `parte1_1/` conserva su diseño estático anterior. `parte1_3/`
 contiene resultados de ensayos r1–r4 que no pasan por rint; este ajuste
-no exige repetirlos. Los cambios de 1.4 y 1.5 solo fueron revisados en los
+no exige repetirlos (verificado el 13/11/2026, ver Parte 1.3). Los cambios de 1.4 y 1.5 solo fueron revisados en los
 archivos: sus responsables deben ejecutar las siguientes verificaciones.
 
 #### Verificaciones pendientes en 1.4

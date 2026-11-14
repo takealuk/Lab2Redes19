@@ -1,0 +1,5 @@
+# IP de prueba indicada por la letra:
+ip addr add 8.8.8.8/24 dev eth0
+
+# Para llegar a otras redes a traves de rint:
+ip route add default via 8.8.8.1
