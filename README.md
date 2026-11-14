@@ -5,7 +5,7 @@ Cada carpeta es un laboratorio Kathará independiente:
 
 | Carpeta | Contenido | Partes |
 |---|---|---|
-| `parte1/` | Escenario estático de RíoNet, con NAT de A y B y servidor público de B | 1.1 |
+| `parte1_1/` | Escenario estático de RíoNet, con NAT de A y B y servidor público de B | 1.1 |
 | `parte1_2/` | Backbone OSPF, anuncios públicos de los clientes y retorno multipath en rint | 1.2 |
 | `parte1_3/` | Resultados de las pruebas de convergencia; no es un laboratorio independiente | 1.3 |
 | `parte1_4/` | Expansión del ISP con r7, r8 y una LAN nueva | 1.4 |
@@ -111,7 +111,7 @@ En `parte1_2/` también están configurados la ruta por defecto y SNAT de rcla,
 el retorno desde rint y el anuncio OSPF de la red pública de A desde r3.
 La conectividad de extremo a extremo se verificó tras recrear ese escenario.
 
-Direcciones actualmente configuradas en `parte1/`:
+Direcciones actualmente configuradas en `parte1_1/`:
 
 | Red o uso | Prefijo | Interfaces y direcciones |
 |---|---|---|
@@ -189,7 +189,7 @@ rutas de retorno y probar la conectividad de extremo a extremo.
 
 ### Evidencia de NAT
 
-La captura [nat-b.pcap](parte1/shared/nat-b.pcap) contiene cuatro intercambios
+La captura [nat-b.pcap](parte1_1/shared/nat-b.pcap) contiene cuatro intercambios
 ICMP completos entre `pcb1` y `8.8.8.8`. Se verificaron las siguientes direcciones:
 
 | Momento | Origen | Destino |
@@ -203,7 +203,7 @@ Los identificadores y números de secuencia ICMP permiten relacionar cada
 solicitud y respuesta antes y después de la traducción. La captura evidencia
 SNAT en la salida y la traducción inversa de las respuestas hacia la PC privada.
 
-La captura [nat-a.pcap](parte1/shared/nat-a.pcap) se realizó en `rcla`,
+La captura [nat-a.pcap](parte1_1/shared/nat-a.pcap) se realizó en `rcla`,
 con `tcpdump -ni any -w /shared/nat-a.pcap 'icmp and host 8.8.8.8'`,
 mientras se ejecutaba `ping -c 4 8.8.8.8` desde `pca1`.
 Se revisaron sus 16 registros: cuatro intercambios ICMP, observados antes
@@ -225,7 +225,7 @@ Pruebas ejecutadas y confirmadas por Luca en el laboratorio:
 
 - Cliente A: pings `rcla → 203.0.113.13`, `rcla → 192.168.100.10` y
   `pca1 → 192.168.100.1` funcionando.
-- El 22/10/2026, tras recrear `parte1/` en Windows con Docker y Kathará,
+- El 22/10/2026, tras recrear `parte1_1/` en Windows con Docker y Kathará,
   Luca confirmó `pca1 → 8.8.8.8`: cuatro respuestas, 0 % de pérdida y TTL 57.
   La regla SNAT en rcla registró un paquete de 84 bytes, traducido a
   `203.0.113.14`. También confirmó `pcb1 → 8.8.8.8` con cuatro respuestas
@@ -264,9 +264,9 @@ confirmación; esta actualización verifica los archivos, no ejecuta la emulaci�
 
 ### Parte 1.2 – OSPF: avance actual
 
-Se creó `parte1_2/` como copia independiente de `parte1/`, conservando las IP,
+Se creó `parte1_2/` como copia independiente de `parte1_1/`, conservando las IP,
 NAT y servicios de 1.1. Posteriormente se retiraron las rutas estáticas internas
-heredadas que OSPF reemplaza. La versión estática de `parte1/` queda preservada.
+heredadas que OSPF reemplaza. La versión estática de `parte1_1/` queda preservada.
 
 En `r1–r6`, los archivos `etc/frr/frr.conf` activan OSPF en ambos extremos
 de los nueve enlaces internos. Se utiliza una sola área `0.0.0.0`, suficiente
@@ -517,7 +517,7 @@ Para ejecutar esta copia, detener primero el laboratorio anterior desde su
 carpeta con `kathara lclean`; luego ejecutar `kathara lstart` desde `parte1_2/`.
 Para aplicar cambios de archivos en la copia ya activa, usar `kathara lrestart`
 desde `parte1_2/`. La captura de NAT de 1.1 se conserva únicamente en
-`parte1/shared/nat-b.pcap` y `parte1/shared/nat-a.pcap`; las evidencias OSPF
+`parte1_1/shared/nat-b.pcap` y `parte1_1/shared/nat-a.pcap`; las evidencias OSPF
 de 1.2 están en `parte1_2/shared/`.
 
 ### Parte 1.4 – `parte1_4/`
@@ -575,7 +575,7 @@ y rutas públicas OSPF instaladas en r1/r6, y la repetición no mostró bucles.
 Antes de probar, esperar la estabilización y confirmar esas rutas específicas:
 las defaults de r1/r6 hacia rint no deben sustituirlas para estos destinos.
 
-**Alcance:** `parte1/` conserva su diseño estático anterior. `parte1_3/`
+**Alcance:** `parte1_1/` conserva su diseño estático anterior. `parte1_3/`
 contiene resultados de ensayos r1–r4 que no pasan por rint; este ajuste
 no exige repetirlos. Los cambios de 1.4 y 1.5 solo fueron revisados en los
 archivos: sus responsables deben ejecutar las siguientes verificaciones.
